@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node scripts/brand.mjs)",
+      "Bash(node scripts/profile.mjs)",
       "Bash(node scripts/setup-check.mjs:*)",
       "Bash(npm install --prefix scripts)",
       "Bash(node scripts/extract.mjs:*)",
@@ -13,6 +13,7 @@
       "Bash(node --env-file=.env scripts/save-output.mjs:*)",
       "Bash(node --env-file=.env scripts/enrich.mjs:*)",
       "Bash(node scripts/install-admin.mjs:*)",
+      "Bash(npx serve admin:*)",
       "Bash(git -C site-repo pull:*)",
       "Bash(git -C site-repo status:*)",
       "Bash(date:*)",

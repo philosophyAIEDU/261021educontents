@@ -13,13 +13,13 @@ service cloud.firestore {
         && request.auth.token.email_verified == true;
     }
 
-    // Contents Input: 정제·태깅된 내 콘텐츠 (관리자만 읽기·쓰기)
-    match /contents_input/{docId} {
+    // 지식 창고 (knowledge_input): 정리·태깅된 내 강의·연구·글 (관리자만 읽기·쓰기)
+    match /knowledge_input/{docId} {
       allow read, write: if isAdmin();
     }
 
-    // Contents Output: 초고·결과물 (관리자만 읽기·쓰기)
-    match /contents_output/{docId} {
+    // 결과물 (knowledge_output): 강의안·학습자료·평가문항·칼럼 등의 초고 (관리자만 읽기·쓰기)
+    match /knowledge_output/{docId} {
       allow read, write: if isAdmin();
     }
   }

@@ -1,27 +1,21 @@
-// 유튜브 링크로 발행일·조회수를 가져와 processed/ JSON의 태그를 채운다.
+// 유튜브 강의 영상 링크로 공개일·조회수를 가져와 processed/ JSON의 태그를 채운다.
 //
 // 사용법
-//   node --env-file=.env scripts/enrich.mjs --id script-01 --url https://youtu.be/XXXXXXXXXXX
-//   node --env-file=.env scripts/enrich.mjs --id script-01        (JSON에 youtube_url이 이미 있을 때 조회수 갱신)
+//   node --env-file=.env scripts/enrich.mjs --id lecture-01 --url https://youtu.be/XXXXXXXXXXX
+//   node --env-file=.env scripts/enrich.mjs --id lecture-01        (JSON에 youtube_url이 이미 있을 때 조회수 갱신)
 //   node --env-file=.env scripts/enrich.mjs --all                 (youtube_url이 있는 모든 문서 갱신)
 //
 // 필요: .env 의 YOUTUBE_API_KEY (YouTube Data API v3, git에 올리지 않는다)
-// 채우는 값: tags.published_at(YYYY-MM-DD, 한국 시간), views, tags.performance_grade(상/중/하)
-// 등급 기준: 100 미만 하 / 100 이상 1000 미만 중 / 1000 이상 상
+// 채우는 값: tags.created_at(비어 있을 때만, YYYY-MM-DD 한국 시간), views, tags.reception_grade(상/중/하, 선택 태그)
+// 등급 기준: 100 미만 하 / 100 이상 1000 미만 중 / 1000 이상 상 (scripts/schema.mjs)
 
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { REQUIRED_TAGS, gradeFromViews, isEmpty } from "./schema.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PROCESSED = path.join(ROOT, "processed");
-const REQUIRED_TAGS = ["category", "format", "target_audience", "performance_grade", "published_at", "key_message"];
-
-export function gradeFromViews(views) {
-  if (views >= 1000) return "상";
-  if (views >= 100) return "중";
-  return "하";
-}
 
 export function parseVideoId(input) {
   if (/^[\w-]{11}$/.test(input)) return input;
@@ -51,7 +45,7 @@ async function fetchVideo(id) {
 }
 
 function refreshStatus(doc) {
-  const missing = REQUIRED_TAGS.filter((k) => doc.tags[k] === null || doc.tags[k] === undefined || doc.tags[k] === "");
+  const missing = REQUIRED_TAGS.filter((k) => isEmpty(doc.tags[k]));
   doc.missing_tags = missing;
   doc.upload_ready = missing.length === 0;
 }
@@ -65,13 +59,17 @@ async function enrich(file, urlOverride) {
   const v = await fetchVideo(id);
   doc.youtube_url = url;
   doc.youtube_id = id;
-  doc.tags.published_at = v.publishedAt;
+  doc.tags = doc.tags ?? {};
+  // 강의일이 따로 있으면 그대로 두고, 비어 있을 때만 영상 공개일로 채운다
+  if (isEmpty(doc.tags.created_at)) doc.tags.created_at = v.publishedAt;
+  doc.published_at = v.publishedAt;
   doc.views = v.views;
   doc.views_fetched_at = new Date().toISOString();
-  doc.tags.performance_grade = gradeFromViews(v.views);
+  doc.tags.reception_grade = gradeFromViews(v.views);
+  doc.grade_source = "조회수";
   refreshStatus(doc);
   await writeFile(p, JSON.stringify(doc, null, 2), "utf-8");
-  console.log(`[갱신] ${doc.id}: 발행일 ${v.publishedAt}, 조회수 ${v.views.toLocaleString()}, 등급 ${doc.tags.performance_grade}, 업로드가능 ${doc.upload_ready}`);
+  console.log(`[갱신] ${doc.id}: 공개일 ${v.publishedAt}, 조회수 ${v.views.toLocaleString()}, 반응 등급 ${doc.tags.reception_grade}, 업로드가능 ${doc.upload_ready}`);
   console.log(`        영상 제목: ${v.title}`);
   return true;
 }

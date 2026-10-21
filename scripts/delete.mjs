@@ -1,14 +1,15 @@
 // Firestore 문서 1개를 삭제한다. 기본은 dry-run이며 --commit을 붙여야 실제로 지운다.
 //
-//   node scripts/delete.mjs --id script-01            대상만 출력 (삭제 안 함)
-//   node scripts/delete.mjs --id script-01 --commit   실제 삭제
+//   node scripts/delete.mjs --id lecture-01            대상만 출력 (삭제 안 함)
+//   node scripts/delete.mjs --id lecture-01 --commit   실제 삭제
 //
 // 인증: GOOGLE_APPLICATION_CREDENTIALS=<서비스 계정 키 경로>
-// 설정: FIREBASE_PROJECT_ID, FIRESTORE_COLLECTION(기본 contents_input)
+// 설정: FIREBASE_PROJECT_ID, FIRESTORE_COLLECTION(기본 knowledge_input)
 // 일괄 삭제(--all)는 지원하지 않는다.
 
+import { INPUT_COLLECTION as COLLECTION } from "./schema.mjs";
+
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID ?? "(미설정)";
-const COLLECTION = process.env.FIRESTORE_COLLECTION ?? "contents_input";
 
 const args = process.argv.slice(2);
 const idIdx = args.indexOf("--id");

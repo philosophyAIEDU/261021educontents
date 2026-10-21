@@ -1,16 +1,19 @@
-// 내 콘텐츠를 가져와 raw/ 에 텍스트 파일(.txt)과 정보 파일(.txt.meta.json)로 저장한다.
-// 그다음 /ingest 가 정리·태깅해서 Contents Input 에 올린다.
+// 교수님의 자료를 가져와 raw/ 에 텍스트 파일(.txt)과 정보 파일(.txt.meta.json)로 저장한다.
+// 그다음 /ingest 가 정리·태깅해서 지식 창고(knowledge_input)에 올린다.
 //
 // 사용법 (프로젝트 폴더에서)
-//   node scripts/extract.mjs --youtube <영상 링크>                   영상 1개의 자막
+//   node scripts/extract.mjs --file raw/3주차_강의.pptx              문서 파일 1개 (.pptx .docx .hwpx .pdf .srt .vtt)
+//   node scripts/extract.mjs --file raw                              raw/ 에 넣어 둔 문서 파일 전부
+//   node scripts/extract.mjs --youtube <강의 영상 링크>              영상 1개의 자막
 //   node scripts/extract.mjs --youtube <내 채널 링크> --limit 5      채널의 최근 영상 5개
 //   node scripts/extract.mjs --url <내 사이트 글 주소>               글 1개
 //   node scripts/extract.mjs --rss <내 RSS 주소> --limit 10          RSS 의 최근 글 10개
 //   node scripts/extract.mjs --repo site-repo --limit 50             내 사이트 저장소의 마크다운 글
-//   node scripts/extract.mjs --auto                                  brand.md 에 적힌 곳(유튜브·RSS·저장소)에서 모두
+//   node scripts/extract.mjs --auto                                  raw/ 의 문서 파일 + profile.md 에 적힌 곳(유튜브·RSS·저장소)에서 모두
 //   --list  저장하지 않고 가져올 목록만 보여준다
 //
-// 규칙 3: brand.md 에 적힌 내 주소(사이트·RSS·내 다른 주소·유튜브 채널)의 콘텐츠만 가져온다.
+// 규칙 3: profile.md 에 적힌 내 주소(사이트·RSS·내 다른 주소·유튜브 채널)의 자료만 가져온다.
+// 문서 파일은 주소로 확인할 수 없으므로 /ingest 가 "직접 쓴 자료인지"를 교수님께 확인한다.
 // 이미 가져왔거나 processed/ 에 있는 것은 건너뛴다. raw/ 의 기존 파일은 수정하지 않는다.
 // 유튜브는 yt-dlp 가 필요하다 (없으면 설치 방법을 알려준다). API 키는 필요 없다.
 
@@ -19,7 +22,8 @@ import { spawnSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { ROOT, readBrand, ownDomains, isOwnUrl } from "./brand.mjs";
+import { ROOT, readProfile, ownDomains, isOwnUrl } from "./profile.mjs";
+import { DOC_EXTS, OLD_EXTS, fileToText } from "./docs.mjs";
 
 const RAW = path.join(ROOT, "raw");
 const PROCESSED = path.join(ROOT, "processed");
@@ -94,11 +98,12 @@ async function readJsonFiles(dir, suffix) {
 
 async function knownSources() {
   const known = new Set();
-  const add = (d = {}) => ["source_url", "youtube_url", "youtube_id", "repo_path", "source_file"].forEach((k) => d[k] && known.add(String(d[k])));
+  const add = (d = {}) => ["source_url", "youtube_url", "youtube_id", "repo_path", "source_file", "original_file"].forEach((k) => d[k] && known.add(String(d[k])));
   for (const dir of [PROCESSED, path.join(PROCESSED, "_hold"), path.join(PROCESSED, "_removed")]) (await readJsonFiles(dir, ".json")).forEach((x) => add(x.data));
   for (const dir of [RAW, path.join(RAW, "hold")]) {
     (await readJsonFiles(dir, ".meta.json")).forEach((x) => add(x.data));
-    try { (await readdir(dir)).forEach((f) => known.add(f)); } catch {}
+    // 변환 전 문서 파일 이름은 넣지 않는다 (변환 여부는 .meta.json 의 original_file 로 판단한다)
+    try { (await readdir(dir)).filter((f) => !CONVERT_EXTS.includes(path.extname(f).toLowerCase())).forEach((f) => known.add(f)); } catch {}
   }
   return known;
 }
@@ -113,7 +118,7 @@ async function saveRaw(name, text, meta, opts) {
     console.log(`[건너뜀] 이미 있음: raw/${file}`);
     return false;
   }
-  if (text.replace(/\s/g, "").length < 200) console.warn(`[주의] ${file}: 본문이 매우 짧습니다 (${text.length}자). 자막이 없거나 글이 화면에서만 그려지는 사이트일 수 있습니다.`);
+  if (text.replace(/\s/g, "").length < 200) console.warn(`[주의] ${file}: 본문이 매우 짧습니다 (${text.length}자). 자막이 없거나, 글이 화면에서만 그려지는 사이트이거나, 그림으로만 된 문서(스캔 PDF 등)일 수 있습니다.`);
   if (opts.list) {
     console.log(`[가져올 것] raw/${file} — ${meta.title || ""} (${meta.published_at ?? "발행일 모름"})`);
     return true;
@@ -154,8 +159,8 @@ export function json3ToText(j) {
   return cleanLines(lines);
 }
 
-export function myYoutube(brand) {
-  const v = (brand["유튜브 채널"] || process.env.MY_YOUTUBE_CHANNEL_ID || "").trim();
+export function myYoutube(profile) {
+  const v = (profile["유튜브 채널"] || process.env.MY_YOUTUBE_CHANNEL_ID || "").trim();
   return {
     handle: v.match(/@([\w.-]+)/)?.[1]?.toLowerCase() ?? null,
     channelId: v.match(/(UC[\w-]{22})/)?.[1] ?? null,
@@ -178,7 +183,7 @@ async function youtubeVideo(cmd, url, me, opts) {
     if (!infoFile) throw new Error("영상 정보를 받지 못했습니다.");
     const info = JSON.parse(await readFile(path.join(tmp, infoFile), "utf-8"));
     if (!isMyChannel(info, me)) {
-      console.error(`[멈춤] 내 채널 영상이 아닙니다: ${info.title} (${info.channel ?? info.uploader ?? "채널 모름"}). 규칙 3에 따라 가져오지 않습니다.`);
+      console.error(`[멈춤] 내 채널 영상이 아닙니다: ${info.title} (${info.channel ?? info.uploader ?? "채널 모름"}). 규칙 3에 따라 가져오지 않습니다. (학교·기관 채널에 올린 내 강의라면 profile.md 의 '유튜브 채널'을 그 채널로 바꾸지 말고, 교수님께 확인한 뒤 자막 파일(.srt)을 raw/ 에 넣어 처리합니다)`);
       return false;
     }
     const pageUrl = info.webpage_url ?? url;
@@ -194,7 +199,7 @@ async function youtubeVideo(cmd, url, me, opts) {
     const text = json3ToText(JSON.parse(await readFile(path.join(tmp, sub), "utf-8")));
     return saveRaw(`yt-${info.id}`, text, {
       source: "youtube",
-      format_hint: "유튜브 대본",
+      format_hint: "강의 녹취",
       title: info.title,
       youtube_url: pageUrl,
       youtube_id: info.id,
@@ -209,7 +214,7 @@ async function youtubeVideo(cmd, url, me, opts) {
 }
 
 async function youtube(url, me, opts) {
-  if (!me.handle && !me.channelId) throw new Error("brand.md 의 '유튜브 채널'에 내 채널 주소(예: https://www.youtube.com/@내핸들)를 먼저 적어 주세요. 내 영상인지 확인하는 기준입니다.");
+  if (!me.handle && !me.channelId) throw new Error("profile.md 의 '유튜브 채널'에 내 채널 주소(예: https://www.youtube.com/@내핸들)를 먼저 적어 주세요. 내 영상인지 확인하는 기준입니다.");
   const cmd = findYtDlp();
   if (/^@[\w.-]+$/.test(url.trim())) url = `https://www.youtube.com/${url.trim()}`;
   else if (/^UC[\w-]{22}$/.test(url.trim())) url = `https://www.youtube.com/channel/${url.trim()}`;
@@ -229,14 +234,14 @@ async function youtube(url, me, opts) {
 
 // ---------- 웹 글 / RSS ----------
 async function fetchText(url) {
-  const res = await fetch(url, { headers: { "user-agent": "Mozilla/5.0 (contents-studio extract)" } });
+  const res = await fetch(url, { headers: { "user-agent": "Mozilla/5.0 (knowledge-studio extract)" } });
   if (!res.ok) throw new Error(`${url} 을(를) 열지 못했습니다 (HTTP ${res.status})`);
   return res.text();
 }
 
 function checkOwn(url, domains) {
-  if (!domains.length) throw new Error("brand.md 의 '사이트 주소'를 먼저 채워 주세요. 내 글인지 확인하는 기준입니다 (/start).");
-  if (!isOwnUrl(url, domains)) throw new Error(`내 주소가 아닙니다: ${url}\n  내 글이 맞다면 brand.md 의 '내 다른 주소'에 이 도메인을 추가하세요. (규칙 3: 타인의 글은 가져오지 않습니다)`);
+  if (!domains.length) throw new Error("profile.md 의 '사이트 주소'나 '내 다른 주소'를 먼저 채워 주세요. 내 글인지 확인하는 기준입니다 (/start).");
+  if (!isOwnUrl(url, domains)) throw new Error(`내 주소가 아닙니다: ${url}\n  내 글이 맞다면 profile.md 의 '내 다른 주소'에 이 주소를 추가하세요 (예: brunch.co.kr/@내아이디, 학교 교수 소개 페이지). 언론사 칼럼처럼 공용 사이트라면 기사 하나의 주소까지 적습니다. (규칙 3: 타인의 글은 가져오지 않습니다)`);
 }
 
 async function webPage(url, domains, opts, fromFeed = {}) {
@@ -340,27 +345,68 @@ async function repo(dir, opts) {
   return n;
 }
 
+// ---------- 문서 파일 (.pptx .docx .hwpx .pdf .srt .vtt) ----------
+const CONVERT_EXTS = [...DOC_EXTS, ".srt", ".vtt"];
+
+async function docFile(abs, opts) {
+  const insideRaw = path.dirname(abs) === RAW;
+  const original = insideRaw ? path.basename(abs) : path.relative(ROOT, abs).split(path.sep).join("/");
+  if (opts.known.has(original)) { console.log(`[건너뜀] 이미 가져온 파일: ${original}`); return false; }
+  let out;
+  try { out = await fileToText(abs); }
+  catch (e) {
+    if (e.code === "NO_PDFTOTEXT") { console.error(`[PDF] ${original}: ${e.message}`); opts.pdfPending.push(original); return false; }
+    throw e;
+  }
+  const meta = { source: "file", format_hint: out.format_hint, title: path.basename(abs).replace(/\.[^.]+$/, ""), original_file: original, ...out.info };
+  try { meta.file_modified_at = toDate((await stat(abs)).mtime.toISOString()); } catch {}
+  // 같은 이름의 .docx 와 .pdf 가 겹치지 않게 확장자를 이름에 남긴다
+  const ext = path.extname(abs).slice(1).toLowerCase();
+  return saveRaw(`file-${slugify(path.basename(abs, path.extname(abs)))}-${ext}`, out.text, meta, opts);
+}
+
+async function files(target, opts) {
+  const abs = path.resolve(ROOT, target);
+  if (!(await exists(abs))) throw new Error(`파일이나 폴더가 없습니다: ${target}`);
+  const isDir = (await stat(abs)).isDirectory();
+  const names = isDir ? await readdir(abs) : [];
+  const list = isDir ? names.filter((f) => CONVERT_EXTS.includes(path.extname(f).toLowerCase())).map((f) => path.join(abs, f)) : [abs];
+  if (isDir) {
+    console.log(`${path.relative(ROOT, abs) || "."} 에서 문서 파일 ${list.length}개를 확인합니다.`);
+    const old = names.filter((f) => OLD_EXTS.includes(path.extname(f).toLowerCase()));
+    if (old.length) console.warn(`[주의] 옛 형식이라 읽지 못하는 파일 ${old.length}개: ${old.join(", ")} → 한글·PowerPoint·Word에서 .hwpx/.pptx/.docx 또는 PDF로 저장해 주세요.`);
+  }
+  let n = 0;
+  for (const f of list) {
+    try { if (await docFile(f, opts)) n++; }
+    catch (e) { console.error(`[실패] ${path.basename(f)}: ${e.message}`); process.exitCode = 1; }
+  }
+  return n;
+}
+
 // ---------- 실행 ----------
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const val = (f) => (args.includes(f) ? args[args.indexOf(f) + 1] : null);
-  const brand = await readBrand();
-  const domains = ownDomains(brand);
-  const opts = { list: args.includes("--list"), limit: Number(val("--limit") ?? 10), known: await knownSources() };
+  const profile = await readProfile();
+  const domains = ownDomains(profile);
+  const opts = { list: args.includes("--list"), limit: Number(val("--limit") ?? 10), known: await knownSources(), pdfPending: [] };
   const jobs = [];
-  if (val("--youtube")) jobs.push(["유튜브", () => youtube(val("--youtube"), myYoutube(brand), opts)]);
+  if (val("--file")) jobs.push(["문서 파일", () => files(val("--file"), opts)]);
+  if (val("--youtube")) jobs.push(["유튜브", () => youtube(val("--youtube"), myYoutube(profile), opts)]);
   if (val("--url")) jobs.push(["웹 글", async () => ((await webPage(val("--url"), domains, opts)) ? 1 : 0)]);
   if (val("--rss")) jobs.push(["RSS", () => rss(val("--rss"), domains, opts)]);
   if (val("--repo")) jobs.push(["사이트 저장소", () => repo(val("--repo"), opts)]);
   if (args.includes("--auto")) {
-    if (brand["유튜브 채널"]) jobs.push(["유튜브", () => youtube(brand["유튜브 채널"], myYoutube(brand), opts)]);
-    if (brand["RSS 주소"]) jobs.push(["RSS", () => rss(brand["RSS 주소"], domains, opts)]);
-    const repoDir = brand["사이트 저장소 폴더"] || "site-repo";
+    jobs.push(["raw/ 문서 파일", () => files("raw", opts)]);
+    if (profile["유튜브 채널"]) jobs.push(["유튜브", () => youtube(profile["유튜브 채널"], myYoutube(profile), opts)]);
+    if (profile["RSS 주소"]) jobs.push(["RSS", () => rss(profile["RSS 주소"], domains, opts)]);
+    const repoDir = profile["사이트 저장소 폴더"] || "site-repo";
     if (await exists(path.resolve(ROOT, repoDir))) jobs.push(["사이트 저장소", () => repo(repoDir, opts)]);
-    if (!jobs.length) console.log("brand.md 에 가져올 곳(유튜브 채널, RSS 주소, 사이트 저장소)이 없습니다.");
+    if (jobs.length === 1) console.log("profile.md 에 가져올 곳(유튜브 채널, RSS 주소, 사이트 저장소)이 없어 raw/ 의 문서 파일만 확인합니다.");
   }
-  if (!jobs.length && !args.includes("--auto")) {
-    console.error("가져올 곳을 지정하세요: --youtube <링크> | --url <글 주소> | --rss <RSS 주소> | --repo <폴더> | --auto  (자세한 사용법은 파일 맨 위)");
+  if (!jobs.length) {
+    console.error("가져올 곳을 지정하세요: --file <파일·폴더> | --youtube <링크> | --url <글 주소> | --rss <RSS 주소> | --repo <폴더> | --auto  (자세한 사용법은 파일 맨 위)");
     process.exit(1);
   }
   let total = 0;
@@ -368,5 +414,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     try { total += await job(); }
     catch (e) { console.error(`[실패] ${name}: ${e.message}`); process.exitCode = 1; }
   }
-  console.log(`\n${opts.list ? "가져올" : "새로 가져온"} 콘텐츠: ${total}개${total && !opts.list ? " → 이제 /ingest 로 정리해서 올리세요." : ""}`);
+  if (opts.pdfPending.length) console.log(`\n텍스트로 바꾸지 못한 PDF ${opts.pdfPending.length}개: ${opts.pdfPending.join(", ")} → Claude가 직접 읽어 정리합니다 (/ingest 0단계).`);
+  console.log(`\n${opts.list ? "가져올" : "새로 가져온"} 자료: ${total}개${total && !opts.list ? " → 이제 /ingest 로 정리해서 올리세요." : ""}`);
 }

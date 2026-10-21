@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>콘텐츠 창고 - 운영자 전용</title>
+<title>지식 자산 관리 - 교수 전용</title>
 <style>
     :root {
-        --primary: #e67e22; --primary-dark: #d35400; --text: #2c3e50; --muted: #7f8c8d;
+        --primary: #2d5b8a; --primary-dark: #1f4266; --text: #23303d; --muted: #6b7785;
         --bg: #f8f9fa; --white: #fff; --border: #e3e6ea; --error: #e74c3c;
     }
     * { box-sizing: border-box; }
@@ -29,7 +29,7 @@
     .card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
     .card h3 { margin: 0 0 6px; font-size: 1rem; }
     .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
-    .tag { background: #fdf2e6; color: var(--primary-dark); border-radius: 999px; padding: 2px 10px; font-size: .78rem; }
+    .tag { background: #e8eff7; color: var(--primary-dark); border-radius: 999px; padding: 2px 10px; font-size: .78rem; }
     .msg { color: var(--muted); font-size: .88rem; margin: 4px 0; }
     .body { white-space: pre-wrap; background: var(--bg); border-radius: 8px; padding: 10px; margin-top: 8px; max-height: 320px; overflow: auto; font-size: .88rem; display: none; }
     .form { display: grid; gap: 8px; margin-bottom: 16px; }
@@ -41,29 +41,29 @@
 </head>
 <body>
 <header>
-    <h1><span id="site-name"></span> 콘텐츠 창고 <span class="msg">운영자 전용</span></h1>
+    <h1><span id="site-name"></span> 지식 자산 관리 <span class="msg">교수 전용</span></h1>
     <div><span id="who" class="msg"></span> <button id="logout" style="display:none">로그아웃</button></div>
 </header>
 
 <main>
     <div id="gate" class="gate" style="display:flex">
-        <p>운영자만 볼 수 있는 공간입니다.</p>
+        <p>교수님 본인만 볼 수 있는 공간입니다.</p>
         <button id="login" class="primary">Google 로그인</button>
         <p id="denied" class="err" style="display:none">이 계정에는 접근 권한이 없습니다. (firestore.rules의 이메일과 같은 계정으로 로그인하세요)</p>
     </div>
 
     <div id="app" style="display:none">
         <div class="tabs">
-            <button class="tab active" data-tab="input">Contents Input <span id="n-input"></span></button>
-            <button class="tab" data-tab="output">Contents Output <span id="n-output"></span></button>
+            <button class="tab active" data-tab="input">지식 창고 <span id="n-input"></span></button>
+            <button class="tab" data-tab="output">결과물 <span id="n-output"></span></button>
         </div>
 
         <section id="panel-input" class="panel active">
             <div class="filters">
                 <input id="f-q" placeholder="검색 (제목·본문·핵심 메시지)">
-                <select id="f-format"><option value="">포맷 전체</option></select>
-                <select id="f-category"><option value="">카테고리 전체</option></select>
-                <select id="f-grade"><option value="">성과등급 전체</option><option>상</option><option>중</option><option>하</option></select>
+                <select id="f-format"><option value="">자료 종류 전체</option></select>
+                <select id="f-category"><option value="">분야 전체</option></select>
+                <select id="f-ktype"><option value="">지식 유형 전체</option><option>개념·이론</option><option>방법·절차</option><option>사례·경험</option><option>연구 결과</option><option>관점·주장</option></select>
             </div>
             <div id="input-list"></div>
         </section>
@@ -73,8 +73,8 @@
                 <summary>직접 추가하기</summary>
                 <div class="form">
                     <input id="o-title" placeholder="제목" maxlength="120">
-                    <input id="o-type" placeholder="종류 (예: 스레드, 뉴스레터, 유튜브 대본, 블로그 글)" maxlength="60">
-                    <input id="o-sources" placeholder="참고한 Input 문서 ID (쉼표로 구분, 예: script-01,script-03)">
+                    <input id="o-type" placeholder="종류 (예: 강의안, 학습자료, 평가문항, 칼럼, 블로그, 영상대본, 교재)" maxlength="60">
+                    <input id="o-sources" placeholder="근거로 쓴 지식 창고 문서 ID (쉼표로 구분, 예: lecture-01,paper-02)">
                     <textarea id="o-body" placeholder="결과물 내용"></textarea>
                     <div><button id="o-save" class="primary">저장</button> <span id="o-msg" class="msg"></span></div>
                 </div>
@@ -90,8 +90,8 @@ import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, order
 import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 // ▼▼▼ 여기를 내 값으로 바꿉니다 (TUTORIAL.md 6단계, /site 가 도와줍니다) ▼▼▼
-// 1) 페이지 맨 위에 보일 내 브랜드 이름
-const SITE_NAME = '내 브랜드';
+// 1) 페이지 맨 위에 보일 이름 (profile.md 의 이름, 예: '홍길동 교수')
+const SITE_NAME = '내 이름';
 // 2) Firebase 콘솔 > 프로젝트 설정 > 일반 > 내 앱(웹) > SDK 설정 및 구성 의 값을 붙여 넣는다.
 //    웹 앱 설정은 공개되어도 되는 값이다. 누가 읽고 쓸 수 있는지는 firestore.rules(isAdmin)가 정한다.
 const firebaseConfig = {
@@ -104,7 +104,7 @@ const firebaseConfig = {
 };
 // ▲▲▲ 여기까지 ▲▲▲
 
-document.title = `${SITE_NAME} 콘텐츠 창고 - 운영자 전용`;
+document.title = `${SITE_NAME} 지식 자산 관리 - 교수 전용`;
 document.getElementById('site-name').textContent = SITE_NAME;
 if (Object.values(firebaseConfig).some((v) => String(v).includes('YOUR_'))) {
     document.body.innerHTML = '<p style="padding:24px;font-family:sans-serif">이 페이지의 firebaseConfig 를 내 값으로 바꿔 주세요. (TUTORIAL.md 6단계)</p>';
@@ -169,11 +169,11 @@ document.querySelectorAll('.tab').forEach((b) => b.onclick = () => {
     $('panel-output').classList.toggle('active', b.dataset.tab === 'output');
 });
 
-// ---- Contents Input (읽기 전용: /ingest 가 scripts/upload.mjs 로 올린다) ----
+// ---- 지식 창고 (읽기 전용: /ingest 가 scripts/upload.mjs 로 올린다) ----
 async function loadInput() {
-    const snap = await getDocs(collection(db, 'contents_input'));
+    const snap = await getDocs(collection(db, 'knowledge_input'));
     inputDocs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => String(b.tags?.published_at ?? '').localeCompare(String(a.tags?.published_at ?? '')));
+        .sort((a, b) => String(b.tags?.created_at ?? '').localeCompare(String(a.tags?.created_at ?? '')));
     $('n-input').textContent = `(${inputDocs.length})`;
     fillOptions('f-format', 'format');
     fillOptions('f-category', 'category');
@@ -186,23 +186,23 @@ function fillOptions(selId, tagKey) {
     [...new Set(inputDocs.map((d) => d.tags?.[tagKey]).filter(Boolean))].forEach((v) => sel.add(new Option(v, v)));
     sel.value = keep;
 }
-['f-format', 'f-category', 'f-grade'].forEach((id) => $(id).onchange = renderInput);
+['f-format', 'f-category', 'f-ktype'].forEach((id) => $(id).onchange = renderInput);
 $('f-q').oninput = renderInput;
 function renderInput() {
-    const f = { format: $('f-format').value, category: $('f-category').value, performance_grade: $('f-grade').value };
+    const f = { format: $('f-format').value, category: $('f-category').value, knowledge_type: $('f-ktype').value };
     const q = $('f-q').value.trim().toLowerCase();
     const list = $('input-list');
     list.replaceChildren();
     const shown = inputDocs.filter((d) => Object.entries(f).every(([k, v]) => !v || d.tags?.[k] === v)
         && (!q || [d.title, d.body, d.tags?.key_message].some((x) => String(x ?? '').toLowerCase().includes(q))));
-    if (!shown.length) list.appendChild(el('p', { text: '표시할 콘텐츠가 없습니다. Claude Code에서 /ingest 로 올려 보세요.', cls: 'msg' }));
+    if (!shown.length) list.appendChild(el('p', { text: '표시할 자료가 없습니다. Claude Code에서 /ingest 로 올려 보세요.', cls: 'msg' }));
     shown.forEach((d) => {
         const t = d.tags || {};
         const { body, buttons } = bodyButtons(d.body || '');
         list.appendChild(el('div', { cls: 'card' }, [
             el('h3', { text: `${d.title || d.source_file || ''} · ${d.id}` }),
-            el('div', { cls: 'tags' }, [t.format, t.category, t.target_audience, t.performance_grade && `성과 ${t.performance_grade}`,
-                d.views !== undefined && d.views !== null && `조회수 ${Number(d.views).toLocaleString()}`, t.published_at]
+            el('div', { cls: 'tags' }, [t.format, t.category, t.knowledge_type, t.target_audience, t.reception_grade && `반응 ${t.reception_grade}`,
+                d.views !== undefined && d.views !== null && `조회수 ${Number(d.views).toLocaleString()}`, d.course, t.created_at]
                 .filter(Boolean).map((x) => el('span', { text: x, cls: 'tag' }))),
             el('p', { text: t.key_message || '', cls: 'msg' }),
             ...buttons, body
@@ -210,22 +210,22 @@ function renderInput() {
     });
 }
 
-// ---- Contents Output (초고는 /draft 가 자동 저장한다. 여기서 복사·삭제·직접 추가) ----
+// ---- 결과물 (초고는 /draft 가 자동 저장한다. 여기서 복사·삭제·직접 추가) ----
 async function loadOutput() {
-    const snap = await getDocs(query(collection(db, 'contents_output'), orderBy('createdAt', 'desc')));
+    const snap = await getDocs(query(collection(db, 'knowledge_output'), orderBy('createdAt', 'desc')));
     $('n-output').textContent = `(${snap.size})`;
     const list = $('output-list');
     list.replaceChildren();
-    if (snap.empty) list.appendChild(el('p', { text: '저장된 결과물이 없습니다. Claude Code에서 /draft 로 초고를 만들어 보세요.', cls: 'msg' }));
+    if (snap.empty) list.appendChild(el('p', { text: '저장된 결과물이 없습니다. Claude Code에서 /draft 로 강의안·학습자료 초고를 만들어 보세요.', cls: 'msg' }));
     snap.docs.forEach((s) => {
         const d = s.data();
         const { body, buttons } = bodyButtons(d.body || '');
         const del = el('button', { text: '삭제' });
-        del.onclick = async () => { if (confirm('삭제할까요?')) { await deleteDoc(doc(db, 'contents_output', s.id)); loadOutput(); } };
-        const review = [d.meta?.voice && `말투 검수: ${d.meta.voice}`, d.meta?.risk && `위험 검수: ${d.meta.risk}`].filter(Boolean).join(' · ');
+        del.onclick = async () => { if (confirm('삭제할까요?')) { await deleteDoc(doc(db, 'knowledge_output', s.id)); loadOutput(); } };
+        const review = [d.meta?.voice && `말투 검수: ${d.meta.voice}`, d.meta?.risk && `정확성·위험 검수: ${d.meta.risk}`].filter(Boolean).join(' · ');
         list.appendChild(el('div', { cls: 'card' }, [
             el('h3', { text: d.title || '(제목 없음)' }),
-            el('p', { text: `${d.type || ''} · 참고: ${(d.sourceIds || []).join(', ') || '없음'} · ${fmtDate(d.updatedAt || d.createdAt)}`, cls: 'msg' }),
+            el('p', { text: `${d.type || ''} · 근거: ${(d.sourceIds || []).join(', ') || '없음'} · ${fmtDate(d.updatedAt || d.createdAt)}`, cls: 'msg' }),
             ...(review ? [el('p', { text: review, cls: 'msg' })] : []),
             ...buttons, ' ', del, body
         ]));
@@ -234,7 +234,7 @@ async function loadOutput() {
 $('o-save').onclick = async () => {
     const title = $('o-title').value.trim(), body = $('o-body').value.trim();
     if (!title || !body) { $('o-msg').textContent = '제목과 내용을 입력하세요.'; return; }
-    await addDoc(collection(db, 'contents_output'), {
+    await addDoc(collection(db, 'knowledge_output'), {
         title, body, type: $('o-type').value.trim(),
         sourceIds: $('o-sources').value.split(',').map((s) => s.trim()).filter(Boolean),
         createdAt: serverTimestamp()

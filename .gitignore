@@ -24,17 +24,17 @@ secrets/
 .firebaserc
 firebase-debug.log*
 
-# === 원본 데이터 (개인정보·저작권 위험, 로컬에만 보관) ===
+# === 원본 자료 (학생 개인정보·저작권 위험, 로컬에만 보관) ===
 raw/*
 !raw/.gitkeep
-!raw/comments
+!raw/questions
 !raw/hold
-raw/comments/*
+raw/questions/*
 raw/hold/*
-!raw/comments/.gitkeep
+!raw/questions/.gitkeep
 !raw/hold/.gitkeep
 
-# === 내 작업 결과 (내 콘텐츠·초고·기록은 로컬에만, 폴더 뼈대(.gitkeep)만 추적) ===
+# === 내 작업 결과 (정리한 자료·초고·기록은 로컬에만, 폴더 뼈대(.gitkeep)만 추적) ===
 processed/*
 !processed/.gitkeep
 drafts/*/*
