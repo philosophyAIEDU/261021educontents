@@ -5,6 +5,7 @@
       "Bash(node scripts/setup-check.mjs:*)",
       "Bash(npm install --prefix scripts)",
       "Bash(node scripts/extract.mjs:*)",
+      "Bash(node scripts/plan.mjs:*)",
       "Bash(node scripts/precheck.mjs:*)",
       "Bash(node --env-file=.env scripts/precheck.mjs:*)",
       "Bash(node scripts/upload.mjs:*)",
@@ -20,6 +21,7 @@
       "Bash(ls:*)",
       "Bash(mkdir -p raw/hold:*)",
       "Bash(mkdir -p processed/_hold:*)",
+      "Bash(mkdir -p drafts/:*)",
       "Bash(mv raw/:*)",
       "Bash(mv processed/:*)"
     ],

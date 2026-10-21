@@ -33,3 +33,27 @@ export const PERSON_KEYS = [
 ];
 
 export const isEmpty = (v) => v === null || v === undefined || v === "";
+
+// 결과물 종류와 drafts/ 아래 폴더
+export const OUTPUT_TYPES = {
+  "강의안": "lesson",
+  "학습자료": "handout",
+  "평가문항": "quiz",
+  "칼럼": "column",
+  "블로그": "blog",
+  "영상대본": "script",
+  "교재": "book",
+};
+
+// 자료 하나를 넣으면 자동으로 만들 결과물 (scripts/plan.mjs). profile.md 의 '자동으로 만들 결과물'로 좁힐 수 있다
+export const DEFAULT_OUTPUTS = {
+  "강의 녹취": ["학습자료", "평가문항"],
+  "강의자료": ["강의안", "학습자료"],
+  "논문·연구": ["칼럼", "학습자료"],
+  "칼럼·기고": ["블로그", "강의안"],
+  "블로그 글": ["학습자료"],
+};
+
+// 같은 강의에 학생 질문이 이만큼 모이면 FAQ 학습자료를, 오개념이 이만큼이면 평가문항을 만든다
+export const QNA_MIN_FAQ = 3;
+export const QNA_MIN_MISCONCEPTION = 2;
