@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>콘텐츠 창고 - 운영자 전용</title>
+<style>
+    :root {
+        --primary: #e67e22; --primary-dark: #d35400; --text: #2c3e50; --muted: #7f8c8d;
+        --bg: #f8f9fa; --white: #fff; --border: #e3e6ea; --error: #e74c3c;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, 'Malgun Gothic', sans-serif; background: var(--bg); color: var(--text); }
+    header { background: var(--white); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 1.1rem; }
+    main { max-width: 1000px; margin: 0 auto; padding: 20px; }
+    .gate { display: none; min-height: 60vh; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; }
+    button { cursor: pointer; border: 1px solid var(--border); background: var(--white); border-radius: 8px; padding: 8px 14px; font-size: .9rem; color: var(--text); }
+    button.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+    button.primary:hover { background: var(--primary-dark); }
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tab.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    select, input, textarea { padding: 8px; border: 1px solid var(--border); border-radius: 8px; font: inherit; }
+    textarea { width: 100%; min-height: 160px; }
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+    .card h3 { margin: 0 0 6px; font-size: 1rem; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+    .tag { background: #fdf2e6; color: var(--primary-dark); border-radius: 999px; padding: 2px 10px; font-size: .78rem; }
+    .msg { color: var(--muted); font-size: .88rem; margin: 4px 0; }
+    .body { white-space: pre-wrap; background: var(--bg); border-radius: 8px; padding: 10px; margin-top: 8px; max-height: 320px; overflow: auto; font-size: .88rem; display: none; }
+    .form { display: grid; gap: 8px; margin-bottom: 16px; }
+    .err { color: var(--error); }
+    details.card summary { cursor: pointer; font-weight: 600; }
+    details.card .form { margin: 12px 0 0; }
+    #f-q { flex: 1; min-width: 180px; }
+</style>
+</head>
+<body>
+<header>
+    <h1><span id="site-name"></span> 콘텐츠 창고 <span class="msg">운영자 전용</span></h1>
+    <div><span id="who" class="msg"></span> <button id="logout" style="display:none">로그아웃</button></div>
+</header>
+
+<main>
+    <div id="gate" class="gate" style="display:flex">
+        <p>운영자만 볼 수 있는 공간입니다.</p>
+        <button id="login" class="primary">Google 로그인</button>
+        <p id="denied" class="err" style="display:none">이 계정에는 접근 권한이 없습니다. (firestore.rules의 이메일과 같은 계정으로 로그인하세요)</p>
+    </div>
+
+    <div id="app" style="display:none">
+        <div class="tabs">
+            <button class="tab active" data-tab="input">Contents Input <span id="n-input"></span></button>
+            <button class="tab" data-tab="output">Contents Output <span id="n-output"></span></button>
+        </div>
+
+        <section id="panel-input" class="panel active">
+            <div class="filters">
+                <input id="f-q" placeholder="검색 (제목·본문·핵심 메시지)">
+                <select id="f-format"><option value="">포맷 전체</option></select>
+                <select id="f-category"><option value="">카테고리 전체</option></select>
+                <select id="f-grade"><option value="">성과등급 전체</option><option>상</option><option>중</option><option>하</option></select>
+            </div>
+            <div id="input-list"></div>
+        </section>
+
+        <section id="panel-output" class="panel">
+            <details class="card">
+                <summary>직접 추가하기</summary>
+                <div class="form">
+                    <input id="o-title" placeholder="제목" maxlength="120">
+                    <input id="o-type" placeholder="종류 (예: 스레드, 뉴스레터, 유튜브 대본, 블로그 글)" maxlength="60">
+                    <input id="o-sources" placeholder="참고한 Input 문서 ID (쉼표로 구분, 예: script-01,script-03)">
+                    <textarea id="o-body" placeholder="결과물 내용"></textarea>
+                    <div><button id="o-save" class="primary">저장</button> <span id="o-msg" class="msg"></span></div>
+                </div>
+            </details>
+            <div id="output-list"></div>
+        </section>
+    </div>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+// ▼▼▼ 여기를 내 값으로 바꿉니다 (TUTORIAL.md 6단계, /site 가 도와줍니다) ▼▼▼
+// 1) 페이지 맨 위에 보일 내 브랜드 이름
+const SITE_NAME = '내 브랜드';
+// 2) Firebase 콘솔 > 프로젝트 설정 > 일반 > 내 앱(웹) > SDK 설정 및 구성 의 값을 붙여 넣는다.
+//    웹 앱 설정은 공개되어도 되는 값이다. 누가 읽고 쓸 수 있는지는 firestore.rules(isAdmin)가 정한다.
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.firebasestorage.app",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
+// ▲▲▲ 여기까지 ▲▲▲
+
+document.title = `${SITE_NAME} 콘텐츠 창고 - 운영자 전용`;
+document.getElementById('site-name').textContent = SITE_NAME;
+if (Object.values(firebaseConfig).some((v) => String(v).includes('YOUR_'))) {
+    document.body.innerHTML = '<p style="padding:24px;font-family:sans-serif">이 페이지의 firebaseConfig 를 내 값으로 바꿔 주세요. (TUTORIAL.md 6단계)</p>';
+    throw new Error('firebaseConfig 미설정');
+}
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const $ = (id) => document.getElementById(id);
+
+// 모든 사용자 데이터는 textContent로만 넣는다 (XSS 방지)
+function el(tag, { text, cls } = {}, children = []) {
+    const e = document.createElement(tag);
+    if (text !== undefined) e.textContent = text;
+    if (cls) e.className = cls;
+    children.forEach((c) => e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c));
+    return e;
+}
+function fmtDate(ts) { return ts?.toDate ? ts.toDate().toLocaleString('ko-KR') : ''; }
+function bodyButtons(text) {
+    const body = el('div', { text, cls: 'body' });
+    const toggle = el('button', { text: '본문 보기/닫기' });
+    toggle.onclick = () => { body.style.display = body.style.display === 'block' ? 'none' : 'block'; };
+    const copy = el('button', { text: '복사' });
+    copy.onclick = async () => {
+        try { await navigator.clipboard.writeText(text); copy.textContent = '복사됨'; }
+        catch { copy.textContent = '복사 실패'; }
+        setTimeout(() => { copy.textContent = '복사'; }, 1500);
+    };
+    return { body, buttons: [toggle, ' ', copy] };
+}
+
+let inputDocs = [];
+
+function showApp(user, ok) {
+    $('gate').style.display = ok ? 'none' : 'flex';
+    $('app').style.display = ok ? 'block' : 'none';
+    $('denied').style.display = (user && !ok) ? 'block' : 'none';
+    $('login').style.display = user ? 'none' : 'inline-block';
+    $('logout').style.display = user ? 'inline-block' : 'none';
+    $('who').textContent = user ? user.email : '';
+}
+
+// 접근 권한은 firestore.rules 가 판단한다. 읽기가 거부되면 권한이 없는 계정이다.
+onAuthStateChanged(auth, async (user) => {
+    if (!user) return showApp(null, false);
+    try {
+        await Promise.all([loadInput(), loadOutput()]);
+        showApp(user, true);
+    } catch (e) {
+        showApp(user, false);
+        if (e.code !== 'permission-denied') alert(`불러오기 실패: ${e.message}`);
+    }
+});
+$('login').onclick = () => signInWithPopup(auth, new GoogleAuthProvider()).catch((e) => alert(e.message));
+$('logout').onclick = () => signOut(auth);
+
+document.querySelectorAll('.tab').forEach((b) => b.onclick = () => {
+    document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === b));
+    $('panel-input').classList.toggle('active', b.dataset.tab === 'input');
+    $('panel-output').classList.toggle('active', b.dataset.tab === 'output');
+});
+
+// ---- Contents Input (읽기 전용: /ingest 가 scripts/upload.mjs 로 올린다) ----
+async function loadInput() {
+    const snap = await getDocs(collection(db, 'contents_input'));
+    inputDocs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => String(b.tags?.published_at ?? '').localeCompare(String(a.tags?.published_at ?? '')));
+    $('n-input').textContent = `(${inputDocs.length})`;
+    fillOptions('f-format', 'format');
+    fillOptions('f-category', 'category');
+    renderInput();
+}
+function fillOptions(selId, tagKey) {
+    const sel = $(selId);
+    const keep = sel.value;
+    while (sel.options.length > 1) sel.remove(1);
+    [...new Set(inputDocs.map((d) => d.tags?.[tagKey]).filter(Boolean))].forEach((v) => sel.add(new Option(v, v)));
+    sel.value = keep;
+}
+['f-format', 'f-category', 'f-grade'].forEach((id) => $(id).onchange = renderInput);
+$('f-q').oninput = renderInput;
+function renderInput() {
+    const f = { format: $('f-format').value, category: $('f-category').value, performance_grade: $('f-grade').value };
+    const q = $('f-q').value.trim().toLowerCase();
+    const list = $('input-list');
+    list.replaceChildren();
+    const shown = inputDocs.filter((d) => Object.entries(f).every(([k, v]) => !v || d.tags?.[k] === v)
+        && (!q || [d.title, d.body, d.tags?.key_message].some((x) => String(x ?? '').toLowerCase().includes(q))));
+    if (!shown.length) list.appendChild(el('p', { text: '표시할 콘텐츠가 없습니다. Claude Code에서 /ingest 로 올려 보세요.', cls: 'msg' }));
+    shown.forEach((d) => {
+        const t = d.tags || {};
+        const { body, buttons } = bodyButtons(d.body || '');
+        list.appendChild(el('div', { cls: 'card' }, [
+            el('h3', { text: `${d.title || d.source_file || ''} · ${d.id}` }),
+            el('div', { cls: 'tags' }, [t.format, t.category, t.target_audience, t.performance_grade && `성과 ${t.performance_grade}`,
+                d.views !== undefined && d.views !== null && `조회수 ${Number(d.views).toLocaleString()}`, t.published_at]
+                .filter(Boolean).map((x) => el('span', { text: x, cls: 'tag' }))),
+            el('p', { text: t.key_message || '', cls: 'msg' }),
+            ...buttons, body
+        ]));
+    });
+}
+
+// ---- Contents Output (초고는 /draft 가 자동 저장한다. 여기서 복사·삭제·직접 추가) ----
+async function loadOutput() {
+    const snap = await getDocs(query(collection(db, 'contents_output'), orderBy('createdAt', 'desc')));
+    $('n-output').textContent = `(${snap.size})`;
+    const list = $('output-list');
+    list.replaceChildren();
+    if (snap.empty) list.appendChild(el('p', { text: '저장된 결과물이 없습니다. Claude Code에서 /draft 로 초고를 만들어 보세요.', cls: 'msg' }));
+    snap.docs.forEach((s) => {
+        const d = s.data();
+        const { body, buttons } = bodyButtons(d.body || '');
+        const del = el('button', { text: '삭제' });
+        del.onclick = async () => { if (confirm('삭제할까요?')) { await deleteDoc(doc(db, 'contents_output', s.id)); loadOutput(); } };
+        const review = [d.meta?.voice && `말투 검수: ${d.meta.voice}`, d.meta?.risk && `위험 검수: ${d.meta.risk}`].filter(Boolean).join(' · ');
+        list.appendChild(el('div', { cls: 'card' }, [
+            el('h3', { text: d.title || '(제목 없음)' }),
+            el('p', { text: `${d.type || ''} · 참고: ${(d.sourceIds || []).join(', ') || '없음'} · ${fmtDate(d.updatedAt || d.createdAt)}`, cls: 'msg' }),
+            ...(review ? [el('p', { text: review, cls: 'msg' })] : []),
+            ...buttons, ' ', del, body
+        ]));
+    });
+}
+$('o-save').onclick = async () => {
+    const title = $('o-title').value.trim(), body = $('o-body').value.trim();
+    if (!title || !body) { $('o-msg').textContent = '제목과 내용을 입력하세요.'; return; }
+    await addDoc(collection(db, 'contents_output'), {
+        title, body, type: $('o-type').value.trim(),
+        sourceIds: $('o-sources').value.split(',').map((s) => s.trim()).filter(Boolean),
+        createdAt: serverTimestamp()
+    });
+    ['o-title', 'o-type', 'o-sources', 'o-body'].forEach((id) => $(id).value = '');
+    $('o-msg').textContent = '저장했습니다.';
+    loadOutput();
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+# === 비밀 키 / 환경변수 (절대 커밋 금지) ===
+.env
+.env.*
+!.env.example
+*.env
+
+# Firebase / Google 서비스 계정 키
+serviceAccount*.json
+*-service-account*.json
+*serviceaccount*.json
+*firebase-adminsdk*.json
+service-account*.json
+credentials.json
+client_secret*.json
+google-services.json
+GoogleService-Info.plist
+*.pem
+*.key
+*.p12
+*.pfx
+keys/
+secrets/
+.firebase/
+.firebaserc
+firebase-debug.log*
+
+# === 원본 데이터 (개인정보·저작권 위험, 로컬에만 보관) ===
+raw/*
+!raw/.gitkeep
+!raw/comments
+!raw/hold
+raw/comments/*
+raw/hold/*
+!raw/comments/.gitkeep
+!raw/hold/.gitkeep
+
+# === 내 작업 결과 (내 콘텐츠·초고·기록은 로컬에만, 폴더 뼈대(.gitkeep)만 추적) ===
+processed/*
+!processed/.gitkeep
+drafts/*/*
+!drafts/*/.gitkeep
+reports/*
+!reports/.gitkeep
+!reports/feedback
+!reports/monthly
+reports/feedback/*
+reports/monthly/*
+!reports/feedback/.gitkeep
+!reports/monthly/.gitkeep
+
+# === 내 Claude Code 개인 설정 ===
+.claude/settings.local.json
+
+# === 의존성 / 빌드 ===
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# === OS / 에디터 ===
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.log
+
+# === 내 사이트 저장소 (/site 가 내려받는 곳, 별도 git 저장소) ===
+site-repo/

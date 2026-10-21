@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// 내 Firebase 프로젝트의 Firestore 규칙에 이 내용을 넣습니다. (Firebase 콘솔 > Firestore Database > 규칙)
+// 이미 다른 규칙이 있다면 아래 `match` 두 블록과 `isAdmin` 함수만 기존 파일에 추가하세요.
+// 'YOUR_EMAIL@gmail.com'을 내 구글 계정 이메일로 바꿔야 합니다. 관리자 페이지는 이 이메일로 로그인한 사람에게만 열립니다.
+// (이 규칙은 Firebase 서버에만 있고 내 사이트에는 올라가지 않으므로 이메일이 공개되지 않습니다)
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'YOUR_EMAIL@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+
+    // Contents Input: 정제·태깅된 내 콘텐츠 (관리자만 읽기·쓰기)
+    match /contents_input/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Contents Output: 초고·결과물 (관리자만 읽기·쓰기)
+    match /contents_output/{docId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node scripts/brand.mjs)",
+      "Bash(node scripts/setup-check.mjs:*)",
+      "Bash(npm install --prefix scripts)",
+      "Bash(node scripts/extract.mjs:*)",
+      "Bash(node scripts/precheck.mjs:*)",
+      "Bash(node --env-file=.env scripts/precheck.mjs:*)",
+      "Bash(node scripts/upload.mjs:*)",
+      "Bash(node --env-file=.env scripts/upload.mjs:*)",
+      "Bash(node scripts/save-output.mjs:*)",
+      "Bash(node --env-file=.env scripts/save-output.mjs:*)",
+      "Bash(node --env-file=.env scripts/enrich.mjs:*)",
+      "Bash(node scripts/install-admin.mjs:*)",
+      "Bash(git -C site-repo pull:*)",
+      "Bash(git -C site-repo status:*)",
+      "Bash(date:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir -p raw/hold:*)",
+      "Bash(mkdir -p processed/_hold:*)",
+      "Bash(mv raw/:*)",
+      "Bash(mv processed/:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./keys/**)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/setup-check.mjs\" --brief 2>/dev/null || echo \"[세팅 점검 실패: Node.js가 설치되지 않았을 수 있음. 사용자가 뭘 해야 하는지 물으면 TUTORIAL.md 1단계(Node.js 설치)부터 안내한다.]\""
+          }
+        ]
+      }
+    ]
+  }
+}
