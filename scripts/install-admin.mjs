@@ -59,7 +59,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   const src = await readFile(path.join(ROOT, "admin", "index.html"), "utf-8");
   if (/YOUR_[A-Z_]+/.test(src.match(/const firebaseConfig = \{[\s\S]*?\};/)?.[0] ?? "YOUR_")) {
-    fail("admin/index.html 의 firebaseConfig 가 아직 비어 있습니다 (YOUR_...). TUTORIAL.md 6단계를 먼저 하세요.");
+    fail("admin/index.html 의 firebaseConfig 가 아직 비어 있습니다 (YOUR_...). TUTORIAL.md 3-2단계를 먼저 하세요.");
   }
   if (!(await exists(path.join(repoDir, ".git")))) fail(`사이트 저장소가 없습니다: ${path.relative(ROOT, repoDir) || repoDir}\n  먼저 내려받으세요: git clone <사이트 GitHub 저장소 주소> ${path.relative(ROOT, repoDir)}`);
 

@@ -9,6 +9,13 @@
 - 첫 답은 짧게: ① 이 폴더가 무엇을 해 주는지 한 줄 ② 전체 세팅이 몇 단계 중 어디까지 됐는지 ③ **지금 할 일 하나** (내가 대신 할 수 있으면 "제가 해 드릴까요?"로 묻는다).
 - 점검 결과가 맥락에 없거나 오래됐으면 `node scripts/setup-check.mjs`를 직접 실행한다.
 
+## 순서: ① 내 사이트 + Firebase → ② 지식 자산화
+1. **내 사이트 만들기 + Firebase 연동 (`/create-site`)**: 교수님 개인 사이트(소개·연구·강의·논문·연락처·글)를 `site-content.md`로 만들고, Firebase 프로젝트 하나(Hosting + Firestore + Google 로그인)에 연결해 `https://<프로젝트ID>.web.app`으로 올린다. 관리자 페이지(`/knowledge-admin.html`)가 같은 사이트에 함께 올라가고, Firestore 규칙도 함께 게시된다 (`.claude/skills/create-site/SKILL.md`). 이미 사이트가 있으면 `/site`로 관리자 페이지만 넣는다.
+2. **지식 자산화 (`/make`)**: 아래.
+3. **공개**: 결과물 중 공개할 글은 교수님이 관리자 페이지 결과물 탭의 **사이트에 게시** 버튼으로 올린다 (`public_posts` 컬렉션 → 사이트의 '글'). Claude는 게시하지 않는다. 손질 표시(`[출처 확인 필요]` 등)가 남은 초고는 버튼이 게시를 거부한다.
+
+사이트 파일: `site-content.md`(내용, 공개됨), `site-assets/`(사진), `site-template/`(모양) → `node scripts/build-site.mjs` → `site/public/`(git 제외) → `node --env-file=.env scripts/deploy-site.mjs`(미리보기, 확인 후 `--commit`). 배포 로그인은 교수님이 한 번 `! npx --yes firebase-tools@15.32.1 login`.
+
 ## 가장 짧은 길: 자료 넣고 `/make`
 교수님이 "자료로 초고 만들어 주세요", "raw에 넣었어요"라고 하면 **`/make`** 를 한다. `raw/`의 자료를 모아 지식 창고에 정리하고, 자료마다 정해진 결과물 초고를 자동으로 뽑아 검수까지 한다 (`.claude/skills/make/SKILL.md`). Firebase가 아직 없어도 된다(로컬 모드). 말투·지식 지도가 비어 있으면 처음 한 번 초안을 만든다. 질문은 끝에 한 번에 모아서 한다. 예약 실행은 같은 일을 질문 없이 하는 `/auto`.
 
@@ -40,7 +47,9 @@
 
 /make = 위 전체를 한 번에: raw/ 자료 → 지식 창고 → (빈 기준 파일 초안) → 자료별 초고 → 검수 → 저장
 /auto = /make 를 질문 없이 (예약 실행 가능)
-/site = 관리자 페이지를 내 사이트(GitHub 저장소)에 올린다 → 내 사이트/knowledge-admin.html
+/create-site = 내 사이트를 만들어 Firebase Hosting 에 올린다 → <ID>.web.app (+ /knowledge-admin.html, Firestore 규칙)
+/site        = 이미 있는 내 사이트(GitHub 저장소)에 관리자 페이지만 넣는다
+관리자 페이지 "사이트에 게시" = 교수님이 고른 결과물 → public_posts → 사이트의 '글'
 ```
 
 - `raw/`: 원본 그대로. **절대 수정하지 않는다.** git에 올라가지 않는다. (가져오기·변환 스크립트가 새 `.txt`를 추가하는 것은 된다)
@@ -140,11 +149,12 @@
 
 **로컬 모드**: `.env`가 없으면 업로드·결과물 저장을 건너뛰고 `processed/`·`drafts/`에만 둔다. 실패로 다루지 않고, `processed/` 파일을 지우지 않는다. 나중에 Firebase를 설정하면 `node --env-file=.env scripts/upload.mjs --all --commit`과 `/draft save <경로>`로 올린다.
 
-Firestore 컬렉션: `knowledge_input`(지식 창고), `knowledge_output`(결과물). 둘 다 관리자만 읽고 쓴다 (`firestore.rules`). 관리자 페이지는 사이트에 공개돼 있어도 이 규칙 때문에 교수님 계정으로 로그인해야만 내용이 보인다.
+Firestore 컬렉션: `knowledge_input`(지식 창고), `knowledge_output`(결과물)은 관리자만 읽고 쓴다. `public_posts`(사이트에 게시한 글)는 누구나 읽고 관리자만 쓴다 (`firestore.rules`, 관리자 이메일은 `profile.md`의 `관리자 이메일`에서 `build-site`가 넣는다). 관리자 페이지는 사이트에 공개돼 있어도 이 규칙 때문에 교수님 계정으로 로그인해야만 내용이 보인다.
 
 ## 작업 시 주의
 - `.claude/settings.json`이 `.env`와 `keys/` 읽기를 막고, 자동 실행에 필요한 스크립트 명령만 미리 허용한다. 이 설정을 약화하지 않는다.
 - 사이트 저장소(`site-repo/`)에는 관리자 페이지 파일 하나만 넣는다. 푸시는 사용자 확인 후에만 한다 (`/site`).
+- `/create-site`의 공개(`deploy-site.mjs --commit`)는 교수님 확인 후에만 한다. `site/public`에는 `build-site.mjs`가 만든 파일만 있어야 하며, `deploy-site.mjs`는 다른 파일이 있으면 올리지 않는다. `site-content.md`는 공개되는 내용이므로 학생 정보·근거 없는 경력·논문을 쓰지 않는다.
 - 업로드 스크립트는 실제 업로드 전에 필수 태그 검증과 규칙 2 위반(학생 신원 정보 잔존) 검사를 먼저 수행한다. 기본은 dry-run이고 `--commit`을 붙여야 올라간다.
 - `raw/`는 git에서 제외되어 있으므로(`.gitkeep`만 추적) 원본을 커밋하지 않는다. `processed/`, `drafts/`, `reports/`의 내용도 기본적으로 git에 올리지 않는다 (`.gitignore` 참고).
 - PDF를 `pdftotext`로 읽지 못하면 Claude가 Read 도구로 PDF를 직접 읽어 `raw/file-<이름>-pdf.txt`와 `.meta.json`(`original_file`에 원본 파일 이름)을 만든다. 원본 PDF는 고치지 않는다.

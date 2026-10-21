@@ -14,6 +14,8 @@
       "Bash(node --env-file=.env scripts/save-output.mjs:*)",
       "Bash(node --env-file=.env scripts/enrich.mjs:*)",
       "Bash(node scripts/install-admin.mjs:*)",
+      "Bash(node scripts/build-site.mjs:*)",
+      "Bash(npx serve site/public:*)",
       "Bash(npx serve admin:*)",
       "Bash(git -C site-repo pull:*)",
       "Bash(git -C site-repo status:*)",

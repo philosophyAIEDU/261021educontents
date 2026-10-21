@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>글 — {{NAME}}</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+    <div class="wrap">
+        <a class="brand" href="./">{{NAME}}</a>
+        <nav><a href="./#posts">← 글 목록</a></nav>
+    </div>
+</header>
+
+<main class="wrap">
+    <article class="post" id="post">
+        <p class="empty">불러오는 중…</p>
+    </article>
+</main>
+
+<footer class="site">
+    <div class="wrap">© {{YEAR}} {{NAME}}</div>
+</footer>
+
+<script>window.SITE_FIREBASE = {{FIREBASE_CONFIG}};</script>
+<script type="module" src="site.js"></script>
+</body>
+</html>

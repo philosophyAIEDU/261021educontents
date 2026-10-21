@@ -1,6 +1,6 @@
 ---
 name: site
-description: 관리자 페이지(지식 창고·결과물 화면)를 교수님의 사이트(연구실·개인 홈페이지)에 올린다. profile.md의 사이트 주소와 GitHub 저장소를 읽어 저장소를 내려받고, 사이트 종류(Next.js, Astro, Vite, Jekyll, 정적 HTML 등)에 맞는 공개 폴더에 knowledge-admin.html을 넣은 뒤, 확인을 받고 커밋·푸시한다. "내 사이트에 올려줘", "관리자 페이지 배포", "사이트 연결", "/site"라고 하면 실행한다. 관리자 페이지를 고친 뒤 다시 올릴 때도 쓴다.
+description: 이미 운영 중인 교수님 사이트(연구실·개인 홈페이지, GitHub로 배포되는 것)에 관리자 페이지(지식 창고·결과물 화면)만 넣는다. 사이트가 없으면 이 스킬이 아니라 /create-site로 새로 만든다. profile.md의 사이트 주소와 GitHub 저장소를 읽어 저장소를 내려받고, 사이트 종류(Next.js, Astro, Vite, Jekyll, 정적 HTML 등)에 맞는 공개 폴더에 knowledge-admin.html을 넣은 뒤, 확인을 받고 커밋·푸시한다. "내 사이트에 올려줘", "관리자 페이지 배포", "사이트 연결", "/site"라고 하면 실행한다. 관리자 페이지를 고친 뒤 다시 올릴 때도 쓴다.
 ---
 
 # /site — 내 사이트에 관리자 페이지 올리기
@@ -10,8 +10,8 @@ description: 관리자 페이지(지식 창고·결과물 화면)를 교수님�
 ## 절차
 1. **준비 확인**
    - `profile.md`의 `사이트 주소`, `사이트 GitHub 저장소`가 비었으면 그것만 묻고 적는다 (`/start` 3절과 같은 방식).
-   - `admin/index.html`의 `firebaseConfig`에 `YOUR_`가 남았으면: Firebase 콘솔 > 프로젝트 설정 > 일반 > 내 앱(웹)의 `firebaseConfig`를 붙여 달라고 해서 넣는다. 웹 앱이 없으면 `TUTORIAL.md` 6단계를 안내한다. `SITE_NAME`에는 profile.md의 `이름`을 넣는다.
-   - `firestore.rules`를 Firebase에 게시했는지 묻는다 (안 했으면 `TUTORIAL.md` 3-2단계). 이것이 "나만 보기"의 실제 잠금장치다.
+   - `admin/index.html`의 `firebaseConfig`에 `YOUR_`가 남았으면: Firebase 콘솔 > 프로젝트 설정 > 일반 > 내 앱(웹)의 `firebaseConfig`를 붙여 달라고 해서 넣는다. 웹 앱이 없으면 `TUTORIAL.md` 3-2단계 4번을 안내한다. `SITE_NAME`에는 profile.md의 `이름`을 넣는다.
+   - Firestore 규칙을 게시했는지 묻는다. 이것이 "나만 보기"의 실제 잠금장치다. 안 했으면 `profile.md`의 `관리자 이메일`을 채우고 `node scripts/build-site.mjs --rules-only` → 교수님 로그인(`! npx --yes firebase-tools@15.32.1 login`) → `node --env-file=.env scripts/deploy-site.mjs --rules-only`(미리보기) → 확인 후 `--commit`. (기존 사이트에는 '글' 영역이 없으므로 `public_posts` 게시는 쓰지 않는다)
 2. **저장소 내려받기** (폴더: profile.md의 `사이트 저장소 폴더`, 기본 `site-repo`. git에 올라가지 않는다)
    - 폴더가 없으면 `git clone <사이트 GitHub 저장소> site-repo`
    - 있으면 `git -C site-repo pull`

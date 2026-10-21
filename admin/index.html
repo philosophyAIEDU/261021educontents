@@ -86,10 +86,10 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, addDoc, setDoc, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-// ▼▼▼ 여기를 내 값으로 바꿉니다 (TUTORIAL.md 6단계, /site 가 도와줍니다) ▼▼▼
+// ▼▼▼ 여기를 내 값으로 바꿉니다 (TUTORIAL.md 3-2단계, /create-site 가 도와줍니다) ▼▼▼
 // 1) 페이지 맨 위에 보일 이름 (profile.md 의 이름, 예: '홍길동 교수')
 const SITE_NAME = '내 이름';
 // 2) Firebase 콘솔 > 프로젝트 설정 > 일반 > 내 앱(웹) > SDK 설정 및 구성 의 값을 붙여 넣는다.
@@ -107,7 +107,7 @@ const firebaseConfig = {
 document.title = `${SITE_NAME} 지식 자산 관리 - 교수 전용`;
 document.getElementById('site-name').textContent = SITE_NAME;
 if (Object.values(firebaseConfig).some((v) => String(v).includes('YOUR_'))) {
-    document.body.innerHTML = '<p style="padding:24px;font-family:sans-serif">이 페이지의 firebaseConfig 를 내 값으로 바꿔 주세요. (TUTORIAL.md 6단계)</p>';
+    document.body.innerHTML = '<p style="padding:24px;font-family:sans-serif">이 페이지의 firebaseConfig 를 내 값으로 바꿔 주세요. (TUTORIAL.md 3-2단계)</p>';
     throw new Error('firebaseConfig 미설정');
 }
 
@@ -210,26 +210,63 @@ function renderInput() {
     });
 }
 
-// ---- 결과물 (초고는 /draft 가 자동 저장한다. 여기서 복사·삭제·직접 추가) ----
+// ---- 결과물 (초고는 /draft 가 자동 저장한다. 여기서 복사·삭제·직접 추가·사이트에 게시) ----
+// 아직 손질이 끝나지 않은 초고에 남는 표시. 이런 표시가 있으면 사이트에 게시하지 않는다
+const UNFINISHED = /\[(출처 확인 필요|참고문헌 추가 필요|교수님 확인|확인 필요|실제 자료로 채워|이 부분은 자료에 없음|활동 아이디어|내 경험을 여기에)/;
+
+async function publishButton(id, d, published) {
+    const b = el('button', { text: published ? '게시 취소' : '사이트에 게시' });
+    b.onclick = async () => {
+        try {
+            if (published) {
+                if (!confirm('사이트에서 이 글을 내릴까요?')) return;
+                await deleteDoc(doc(db, 'public_posts', id));
+            } else {
+                const mark = (d.body || '').match(UNFINISHED);
+                if (mark) { alert(`아직 손질이 끝나지 않은 표시가 있어 게시하지 않습니다: "${mark[0]}…"\n초고를 고친 뒤 Claude Code에서 /draft save 로 다시 올려 주세요.`); return; }
+                if (d.type === '사용 기록') { alert('사용 기록은 사이트에 게시하지 않습니다.'); return; }
+                if (d.type === '평가문항' && !confirm('평가문항에는 정답이 들어 있습니다. 누구나 볼 수 있게 게시할까요?')) return;
+                if (!confirm(`"${d.title}"을(를) 공개 사이트에 게시합니다. 누구나 읽을 수 있습니다. 사실·인용·학생 정보를 확인하셨나요?`)) return;
+                await setDoc(doc(db, 'public_posts', id), {
+                    title: d.title || '(제목 없음)', type: d.type || '', body: d.body || '',
+                    sourceOutputId: id, publishedAt: serverTimestamp(), updatedAt: serverTimestamp()
+                });
+            }
+            loadOutput();
+        } catch (e) { alert(`처리하지 못했습니다: ${e.message}`); }
+    };
+    return b;
+}
+
 async function loadOutput() {
-    const snap = await getDocs(query(collection(db, 'knowledge_output'), orderBy('createdAt', 'desc')));
+    const [snap, pub] = await Promise.all([
+        getDocs(query(collection(db, 'knowledge_output'), orderBy('createdAt', 'desc'))),
+        getDocs(collection(db, 'public_posts')).catch(() => null)
+    ]);
+    const publishedIds = new Set(pub ? pub.docs.map((p) => p.id) : []);
     $('n-output').textContent = `(${snap.size})`;
     const list = $('output-list');
     list.replaceChildren();
     if (snap.empty) list.appendChild(el('p', { text: '저장된 결과물이 없습니다. Claude Code에서 /draft 로 강의안·학습자료 초고를 만들어 보세요.', cls: 'msg' }));
-    snap.docs.forEach((s) => {
+    for (const s of snap.docs) {
         const d = s.data();
+        const published = publishedIds.has(s.id);
         const { body, buttons } = bodyButtons(d.body || '');
         const del = el('button', { text: '삭제' });
-        del.onclick = async () => { if (confirm('삭제할까요?')) { await deleteDoc(doc(db, 'knowledge_output', s.id)); loadOutput(); } };
+        del.onclick = async () => {
+            if (!confirm(published ? '삭제할까요? 사이트에 게시된 글도 함께 내려갑니다.' : '삭제할까요?')) return;
+            if (published) await deleteDoc(doc(db, 'public_posts', s.id));
+            await deleteDoc(doc(db, 'knowledge_output', s.id));
+            loadOutput();
+        };
         const review = [d.meta?.voice && `말투 검수: ${d.meta.voice}`, d.meta?.risk && `정확성·위험 검수: ${d.meta.risk}`].filter(Boolean).join(' · ');
         list.appendChild(el('div', { cls: 'card' }, [
-            el('h3', { text: d.title || '(제목 없음)' }),
+            el('h3', { text: `${d.title || '(제목 없음)'}${published ? ' · 사이트에 게시됨' : ''}` }),
             el('p', { text: `${d.type || ''} · 근거: ${(d.sourceIds || []).join(', ') || '없음'} · ${fmtDate(d.updatedAt || d.createdAt)}`, cls: 'msg' }),
             ...(review ? [el('p', { text: review, cls: 'msg' })] : []),
-            ...buttons, ' ', del, body
+            ...buttons, ' ', await publishButton(s.id, d, published), ' ', del, body
         ]));
-    });
+    }
 }
 $('o-save').onclick = async () => {
     const title = $('o-title').value.trim(), body = $('o-body').value.trim();

@@ -1,9 +1,10 @@
 rules_version = '2';
 
-// 내 Firebase 프로젝트의 Firestore 규칙에 이 내용을 넣습니다. (Firebase 콘솔 > Firestore Database > 규칙)
-// 이미 다른 규칙이 있다면 아래 `match` 두 블록과 `isAdmin` 함수만 기존 파일에 추가하세요.
-// 'YOUR_EMAIL@gmail.com'을 내 구글 계정 이메일로 바꿔야 합니다. 관리자 페이지는 이 이메일로 로그인한 사람에게만 열립니다.
-// (이 규칙은 Firebase 서버에만 있고 내 사이트에는 올라가지 않으므로 이메일이 공개되지 않습니다)
+// 내 Firebase 프로젝트의 Firestore 규칙입니다.
+// /create-site 를 쓰면 scripts/build-site.mjs 가 YOUR_EMAIL@gmail.com 을 profile.md 의 '관리자 이메일'로 바꿔
+// site/firestore.rules 를 만들고, scripts/deploy-site.mjs 가 사이트와 함께 Firebase 에 게시합니다. (콘솔에 붙여 넣을 필요 없음)
+// 콘솔에 직접 넣는 경우: Firebase 콘솔 > Firestore Database > 규칙 에 붙여 넣고 YOUR_EMAIL@gmail.com 을 내 구글 이메일로 바꿉니다.
+// (이 규칙은 Firebase 서버에만 있고 공개 사이트 파일에는 들어가지 않으므로 이메일이 사이트에 드러나지 않습니다)
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -21,6 +22,17 @@ service cloud.firestore {
     // 결과물 (knowledge_output): 강의안·학습자료·평가문항·칼럼 등의 초고 (관리자만 읽기·쓰기)
     match /knowledge_output/{docId} {
       allow read, write: if isAdmin();
+    }
+
+    // 사이트에 게시한 글 (public_posts): 누구나 읽고, 쓰기는 관리자만.
+    // 교수님이 관리자 페이지 결과물 탭의 "사이트에 게시" 버튼을 누른 결과물만 여기로 복사된다.
+    match /public_posts/{docId} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly(['title', 'type', 'body', 'sourceOutputId', 'publishedAt', 'updatedAt'])
+        && request.resource.data.title is string && request.resource.data.title.size() <= 120
+        && request.resource.data.body is string && request.resource.data.body.size() <= 100000;
+      allow delete: if isAdmin();
     }
   }
 }

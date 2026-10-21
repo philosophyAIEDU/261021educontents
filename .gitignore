@@ -68,3 +68,6 @@ desktop.ini
 
 # === 내 사이트 저장소 (/site 가 내려받는 곳, 별도 git 저장소) ===
 site-repo/
+
+# === /create-site 가 만드는 사이트 결과물 (매번 새로 만든다. 원본은 site-template/, site-content.md, site-assets/) ===
+site/

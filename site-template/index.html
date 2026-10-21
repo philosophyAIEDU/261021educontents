@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{NAME}}{{AFFIL_TITLE}}</title>
+<meta name="description" content="{{DESCRIPTION}}">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+    <div class="wrap">
+        <a class="brand" href="./">{{NAME}}</a>
+        <nav>{{NAV}}</nav>
+    </div>
+</header>
+
+<main class="wrap">
+    <div class="hero">
+        {{PHOTO}}
+        <div>
+            <h1>{{NAME}}</h1>
+            <p class="affil">{{AFFIL}}</p>
+            {{TAGLINE}}
+        </div>
+    </div>
+
+{{SECTIONS}}
+
+    <section class="block" id="posts" hidden>
+        <h2>글</h2>
+        <div class="posts" id="post-list"><p class="empty">불러오는 중…</p></div>
+    </section>
+</main>
+
+<footer class="site">
+    <div class="wrap">© {{YEAR}} {{NAME}}</div>
+</footer>
+
+<script>window.SITE_FIREBASE = {{FIREBASE_CONFIG}};</script>
+<script type="module" src="site.js"></script>
+</body>
+</html>
