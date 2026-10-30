@@ -72,10 +72,10 @@ const steps = [
       ? { group: C, name: "기존 사이트에 관리자 페이지 올리기", ok: siteState === "installed" && adminViewed, info: { cloned: "저장소는 있음, 페이지 미설치", installed: `${repoDir}에 ${adminFile} 있음` }[siteState], who: "Claude (푸시 전 사용자 확인)", todo: "`/site` 를 실행한다. 끝나면 Firebase 승인된 도메인 추가는 사용자가 직접. 로그인되면 profile.md의 '관리자 페이지 확인'에 날짜를 적는다" }
       : { group: C, name: "내 사이트의 관리자 페이지에 로그인하기", ok: !!profile["사이트 주소"] && adminViewed, info: profile["사이트 주소"] || "", who: "사용자 답변·로그인 → Claude가 기록", todo: "이미 있는 사이트 주소를 묻고 profile.md에 적는다. 그 주소의 /knowledge-admin.html 에 로그인되면 '관리자 페이지 확인'에 날짜를 적고, 페이지가 없으면 `/site` 를 쓴다" },
   { group: K, name: "자료 넣기 (raw/ → Input)", ok: processed.length > 0 || rawWaiting > 0, info: `지식 창고 ${processed.length}편${rawWaiting ? `, raw/ 에 처리 전 자료 ${rawWaiting}개` : ""}`, who: "사용자", todo: "raw/ 폴더를 열어 주고 강의 슬라이드(.pptx)·한글(.hwpx)·워드·PDF·녹취 텍스트를 넣게 한다. 처음이면 examples/ 연습 강의를 복사해 줘도 된다" },
-  { group: K, name: "첫 초고 받기 (/make → Output)", ok: drafts > 0 && !rawWaiting, info: `초고 ${drafts}개${rawWaiting ? ` · 새 자료 ${rawWaiting}개 대기` : ""}`, who: "Claude", todo: "`/make` 를 실행한다 (자료 정리 → 말투·지식 지도 초안 → 자료별 초고 → 검수 → 저장)" },
-  { group: A, name: "매주 자동 실행 정하기 (/auto)", ok: !!profile["매주 자동 실행"], info: profile["매주 자동 실행"] || "", who: "사용자 선택 → Claude가 기록", todo: "수업 후 raw/ 에 넣기만 하면 되도록 /auto 예약을 안내한다. 정하면(또는 '나중에'라고 하면) profile.md의 '매주 자동 실행'에 적는다" },
+  { group: K, name: "첫 초고 받기 (Output)", ok: drafts > 0 && !rawWaiting, info: `초고 ${drafts}개${rawWaiting ? ` · 새 자료 ${rawWaiting}개 대기` : ""}`, who: "Claude", todo: "`/make` 를 실행한다 (자료 정리 → 말투·지식 지도 초안 → 자료별 초고 → 검수 → 저장)" },
+  { group: A, name: "매주 자동 실행 정하기", ok: !!profile["매주 자동 실행"], info: profile["매주 자동 실행"] || "", who: "사용자 선택 → Claude가 기록", todo: "수업 후 raw/ 에 넣기만 하면 되도록 /auto 예약을 안내한다. 정하면(또는 '나중에'라고 하면) profile.md의 '매주 자동 실행'에 적는다" },
 ];
-const basis = `기준 파일: voice.md ${voiceEmpty ? "빈 템플릿" : "있음"} · knowledge-map.md ${mapEmpty ? "빈 템플릿" : "있음"} (/make 가 처음 한 번 초안을 만든다)`;
+const basis = `기준 파일: voice.md ${voiceEmpty ? "빈 템플릿" : "있음"} · knowledge-map.md ${mapEmpty ? "빈 템플릿" : "있음"} (첫 초고를 만들 때 처음 한 번 초안을 만든다)`;
 const next = steps.find((s) => !s.ok);
 const done = steps.filter((s) => s.ok).length;
 
@@ -85,17 +85,17 @@ if (process.argv.includes("--brief")) {
   console.log(basis);
   if (wantsYoutube && !ytdlp) console.log("· (선택) 유튜브 강의 가져오기용 yt-dlp 미설치");
   console.log(next
-    ? `다음 할 일: ${next.name} — ${next.todo} [${next.who}]\n사용자가 처음 인사하거나 "시작", "뭐 해야 해요?"라고 하면 /start 의 단계 카드로 이 '다음 할 일'을 먼저 안내한다. 한 단계가 끝날 때마다 사용자가 묻기 전에 다음 단계를 안내한다. 사이트와 Firebase는 이미 있다고 보고 안내한다 (아직 없다고 하면 그때 /create-site). 구체적인 요청이 있으면 그것부터 하고 끝에 다음 단계를 안내한다. "자료로 초고 만들어 줘"면 세팅이 덜 됐어도 /make 를 한다 (Firebase 연결 전이면 로컬 모드).`
+    ? `다음 할 일: ${next.name} — ${next.todo} [${next.who}]\n사용자가 처음 인사하거나 "시작", "뭐 해야 해요?"라고 하면 /start 의 단계 카드로 이 '다음 할 일'을 먼저 안내한다. 한 단계가 끝날 때마다 사용자가 묻기 전에 다음 단계를 안내한다. 사이트와 Firebase는 이미 있다고 보고 안내한다 (아직 없다고 하면 그때 /create-site). 구체적인 요청이 있으면 그것부터 하고 끝에 다음 단계를 안내한다. 교수님께는 슬래시 명령 대신 그대로 입력할 문장을 알려 주고, 작업 전에 무엇을 왜 하는지 미리 알린다 (PROMPTS.md). "자료로 초고 만들어 줘"면 세팅이 덜 됐어도 /make 를 한다 (Firebase 연결 전이면 로컬 모드).`
     : "세팅 완료. 사용자가 뭘 할지 물으면 raw/ 에 자료를 넣고 /make, 또는 /asset-ideas → /draft 를 권한다.");
 } else {
   console.log(`세팅 점검 (${done}/${steps.length} 완료)\n`);
-  const titles = { [P]: "■ ① 준비", [C]: "\n■ ② 이미 만든 사이트·Firebase에 연결", [K]: "\n■ ③ 지식 자산화: 자료를 Input에, 초고를 Output에 (/make)", [A]: "\n■ ④ 자동화 (/auto)" };
+  const titles = { [P]: "■ ① 준비", [C]: "\n■ ② 이미 만든 사이트·Firebase에 연결", [K]: "\n■ ③ 지식 자산화: 자료를 Input에, 초고를 Output에", [A]: "\n■ ④ 자동화" };
   for (const g of [P, C, K, A]) {
     console.log(titles[g]);
     steps.forEach((s, i) => s.group === g && console.log(`${s.ok ? "✅" : "⬜"} ${i + 1}. ${s.name}${s.info ? ` — ${s.info}` : ""}`));
   }
   console.log(`\n${basis}`);
   if (wantsYoutube) console.log(`${ytdlp ? "✅" : "⬜"} (선택) 유튜브 강의 가져오기용 yt-dlp`);
-  console.log(next ? `\n👉 다음 할 일: ${next.name}\n   ${next.todo} (${next.who})` : "\n🎉 세팅이 끝났습니다. raw/ 에 자료를 넣고 /make 를 해 보세요.");
+  console.log(next ? `\n👉 다음 할 일: ${next.name}\n   ${next.todo} (${next.who})` : "\n🎉 세팅이 끝났습니다. raw/ 에 자료를 넣고 Claude에게 \"자료 넣었어요. 초고 만들어 주세요.\"라고 하세요.");
   console.log("\n※ Firebase 콘솔에서 하는 일(Firestore·Google 로그인 켜기)은 여기서 확인할 수 없습니다. 관리자 페이지에 로그인해 보면 알 수 있습니다.");
 }

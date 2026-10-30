@@ -53,7 +53,7 @@ description: 교수님이 raw/에 넣어 둔 자료(강의 슬라이드 .pptx, �
 
 ### 5. 보고 (채팅, 짧게)
 ```
-## /make 결과 (YYYY-MM-DD)
+## 자료 정리와 초고 결과 (YYYY-MM-DD)
 - 모은 자료: 새 N편 (슬라이드 N, 한글·워드 N, PDF N, 녹취 N) · 보류 N
 - 기준 파일: voice.md·structure.md·knowledge-map.md — 이번에 초안 만듦 / 이미 있음
 | # | 결과물 | 근거 자료 | 파일 | 검수(말투/정확성) | 꼭 확인할 곳 |
