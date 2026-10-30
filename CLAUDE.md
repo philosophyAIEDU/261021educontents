@@ -9,9 +9,14 @@
 - 첫 답은 짧게: ① 이 폴더가 무엇을 해 주는지 한 줄 ② 전체 세팅이 몇 단계 중 어디까지 됐는지 ③ **지금 할 일 하나** (내가 대신 할 수 있으면 "제가 해 드릴까요?"로 묻는다).
 - 점검 결과가 맥락에 없거나 오래됐으면 `node scripts/setup-check.mjs`를 직접 실행한다.
 
-## 순서: ① 내 사이트 + Firebase → ② 지식 자산화
-1. **내 사이트 만들기 + Firebase 연동 (`/create-site`)**: 교수님 개인 사이트(소개·연구·강의·논문·연락처·글)를 `site-content.md`로 만들고, Firebase 프로젝트 하나(Hosting + Firestore + Google 로그인)에 연결해 `https://<프로젝트ID>.web.app`으로 올린다. 관리자 페이지(`/knowledge-admin.html`)가 같은 사이트에 함께 올라가고, Firestore 규칙도 함께 게시된다 (`.claude/skills/create-site/SKILL.md`). 이미 사이트가 있으면 `/site`로 관리자 페이지만 넣는다.
-2. **지식 자산화 (`/make`)**: 아래.
+## 시작 전제: 사이트와 Firebase는 이미 있다
+교수님은 **사이트를 이미 만들고 Firebase도 연동한 상태**에서 이 폴더를 쓴다. 사이트 만들기를 먼저 권하거나 Firebase 프로젝트를 새로 만들게 하지 않는다. 교수님이 아직 없다고 말할 때만 `/create-site`를 안내한다.
+
+**주의**: `/create-site`의 올리기는 Firebase Hosting의 사이트 전체를 바꾼다. 이미 있는 사이트에 함부로 실행하면 기존 사이트가 덮어써진다 (`.claude/skills/create-site/SKILL.md`의 "먼저 확인").
+
+## 순서: ① 지식 자산화 → ② 이 폴더를 Firebase에 연결 → ③ 공개
+1. **지식 자산화 (`/make`)**: 아래. 연결 전에도 로컬 모드로 돌아간다.
+2. **이 폴더를 이미 만든 Firebase에 연결**: 지식 창고와 결과물을 관리자 페이지에서 보려면 이 폴더에 서비스 계정 키(`keys/`), `.env`, `admin/index.html`의 `firebaseConfig`가 있어야 한다 (`/start` 2절). 사이트에 관리자 페이지가 아직 없으면 `/site`로 넣는다. 연결되면 로컬에 쌓인 자료와 초고를 올린다.
 3. **공개**: 결과물 중 공개할 글은 교수님이 관리자 페이지 결과물 탭의 **사이트에 게시** 버튼으로 올린다 (`public_posts` 컬렉션 → 사이트의 '글'). Claude는 게시하지 않는다. 손질 표시(`[출처 확인 필요]` 등)가 남은 초고는 버튼이 게시를 거부한다.
 
 사이트 파일: `site-content.md`(내용, 공개됨), `site-assets/`(사진), `site-template/`(모양) → `node scripts/build-site.mjs` → `site/public/`(git 제외) → `node --env-file=.env scripts/deploy-site.mjs`(미리보기, 확인 후 `--commit`). 배포 로그인은 교수님이 한 번 `! npx --yes firebase-tools@15.32.1 login`.
