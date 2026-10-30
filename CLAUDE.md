@@ -16,7 +16,7 @@
 
 ## 순서: ① 지식 자산화 → ② 이 폴더를 Firebase에 연결 → ③ 공개
 1. **지식 자산화 (`/make`)**: 아래. 연결 전에도 로컬 모드로 돌아간다.
-2. **이 폴더를 이미 만든 Firebase에 연결**: 지식 창고와 결과물을 관리자 페이지에서 보려면 이 폴더에 서비스 계정 키(`keys/`), `.env`, `admin/index.html`의 `firebaseConfig`가 있어야 한다 (`/start` 2절). 사이트에 관리자 페이지가 아직 없으면 `/site`로 넣는다. 연결되면 로컬에 쌓인 자료와 초고를 올린다.
+2. **이 폴더를 이미 만든 Firebase에 연결**: 지식 창고와 결과물을 관리자 페이지에서 보려면 이 폴더에 서비스 계정 키(`keys/`), `.env`, `admin/index.html`의 `firebaseConfig`가 있어야 한다 (`/start` 2절). 교수님은 키를 받기만 한다 (`FIREBASE_KEY_GUIDE.md`). "키 받았어요"라고 하면 `node scripts/connect-firebase.mjs`로 넣고 연결을 확인한다. 사이트에 관리자 페이지가 아직 없으면 `/site`로 넣는다. 연결되면 로컬에 쌓인 자료와 초고를 올린다.
 3. **공개**: 결과물 중 공개할 글은 교수님이 관리자 페이지 결과물 탭의 **사이트에 게시** 버튼으로 올린다 (`public_posts` 컬렉션 → 사이트의 '글'). Claude는 게시하지 않는다. 손질 표시(`[출처 확인 필요]` 등)가 남은 초고는 버튼이 게시를 거부한다.
 
 사이트 파일: `site-content.md`(내용, 공개됨), `site-assets/`(사진), `site-template/`(모양) → `node scripts/build-site.mjs` → `site/public/`(git 제외) → `node --env-file=.env scripts/deploy-site.mjs`(미리보기, 확인 후 `--commit`). 배포 로그인은 교수님이 한 번 `! npx --yes firebase-tools@15.32.1 login`.
@@ -144,7 +144,7 @@
 
 **`profile.md`** (공개돼도 되는 정보만): 이름, 소속, 전공 분야, 담당 과목, 학습자, 운영 채널, 사이트 주소, 사이트 GitHub 저장소, 유튜브 채널, RSS 주소. Claude가 대화로 채운다.
 
-**`.env`** (비밀, git 제외): `.env.example`을 `.env`로 복사해 **사용자가 직접** 채운다. 값은 채팅에 붙이지 않는다.
+**`.env`** (비밀, git 제외): `node scripts/connect-firebase.mjs`가 `.env.example`로 만들고 공개 값인 프로젝트 ID만 적는다. `YOUTUBE_API_KEY` 같은 비밀 값은 **사용자가 직접** 채우고 채팅에 붙이지 않는다. Claude는 `.env`의 내용을 읽지 않는다.
 
 | 변수 | 설명 | 필수 |
 |---|---|---|

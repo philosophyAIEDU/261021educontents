@@ -63,8 +63,8 @@ const steps = [
   { group: P, name: "교수 프로필 (이름·전공 분야)", ok: ["이름", "전공 분야"].every((k) => profile[k]), info: profile["이름"] ? `${profile["이름"]} · ${profile["전공 분야"] || "전공 분야 비어 있음"}` : "비어 있음", who: "사용자 답변 → Claude가 기록", todo: "이름과 전공 분야를 묻고 profile.md에 적는다" },
   { group: K, name: "자료 넣기 (raw/)", ok: processed.length > 0 || rawWaiting > 0, info: `지식 창고 ${processed.length}편${rawWaiting ? `, raw/ 에 처리 전 자료 ${rawWaiting}개` : ""}`, who: "사용자", todo: "강의 슬라이드(.pptx)·한글(.hwpx)·워드·PDF·녹취 텍스트를 raw/ 폴더에 넣게 한다. 처음이면 examples/ 연습 강의를 복사해 줘도 된다" },
   { group: K, name: "첫 초고 (/make)", ok: drafts > 0 && !rawWaiting, info: `초고 ${drafts}개${rawWaiting ? ` · 새 자료 ${rawWaiting}개 대기` : ""}`, who: "Claude", todo: "`/make` 를 실행한다 (자료 정리 → 말투·지식 지도 초안 → 자료별 초고 → 검수 → 저장)" },
-  { group: C, name: "서비스 계정 키 (이미 만든 Firebase 프로젝트)", ok: keyFiles.length > 0, info: keyFiles.length ? `keys/${keyFiles[0]}` : "keys/ 에 .json 없음", who: "사용자 (Firebase 콘솔)", todo: "프로젝트를 새로 만들지 않는다. 이미 만든 프로젝트의 서비스 계정 키를 keys/service-account.json 으로 넣게 한다 (TUTORIAL.md 3-2단계 5번)" },
-  { group: C, name: ".env 설정", ok: envOk, who: "Claude가 파일 복사 → 값은 사용자", todo: "`.env.example` 을 `.env` 로 복사해 주고, FIREBASE_PROJECT_ID 와 키 경로는 사용자가 직접 채우게 한다" },
+  { group: C, name: "서비스 계정 키 (이미 만든 Firebase 프로젝트)", ok: keyFiles.length > 0, info: keyFiles.length ? `keys/${keyFiles[0]}` : "keys/ 에 .json 없음", who: "사용자가 키 받기 → Claude가 넣기", todo: "프로젝트를 새로 만들지 않는다. FIREBASE_KEY_GUIDE.md 1단계대로 키를 받게 한 뒤 `node scripts/connect-firebase.mjs` 를 실행한다" },
+  { group: C, name: ".env 설정", ok: envOk, who: "Claude", todo: "`node scripts/connect-firebase.mjs` 를 실행한다. 키를 넣으며 .env 도 만들고 연결을 확인한다" },
   { group: C, name: "관리자 페이지 설정 (firebaseConfig)", ok: adminOk, who: "사용자가 값 복사 → Claude가 입력", todo: "이미 만든 Firebase 웹 앱의 firebaseConfig 를 붙여 달라고 해서 admin/index.html 에 넣는다" },
   local
     ? { group: C, name: "관리자 페이지 열기 (내 컴퓨터)", ok: adminOk, info: "`npx serve admin` 후 http://localhost:3000", who: "Claude가 실행", todo: "`npx serve admin` 으로 열어 준다" }

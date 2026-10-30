@@ -31,8 +31,8 @@ description: 처음 시작하거나 "지금 뭐 하면 돼?"일 때 쓴다. 폴�
 3. **첫 초고**: `/make`를 실행한다. 끝나면 초고 파일 위치와 교수님이 확인할 것을 알려 준다.
 
 아래 4~6은 이 폴더를 **이미 만든 Firebase 프로젝트**에 연결하는 일이다. 프로젝트를 새로 만들지 않는다. 이 폴더로 사이트를 만드셨다면 이미 끝난 항목은 건너뛴다.
-4. **키와 `.env`**: 서비스 계정 키는 사용자가 **직접** 받아 넣는다 (`TUTORIAL.md` 3-2단계 5번). 예전에 받은 키 파일이 있으면 `keys/service-account.json`으로 복사해도 된다. `.env`는 내가 `.env.example`을 복사해 만들어 줄 수 있지만 **값은 사용자가 직접** 채운다 (프로젝트 ID는 3-2단계 4번 화면에 있다).
-   `.env`가 생기면 로컬에만 있던 자료와 초고를 올린다: `node --env-file=.env scripts/upload.mjs --all --commit`(미리 검사 먼저, 확인 후), 초고는 `/draft save <경로>`.
+4. **키와 `.env`**: 사용자는 키를 **받기만** 한다. `FIREBASE_KEY_GUIDE.md` 1단계를 안내하고, "키 받았어요"라고 하면 내가 `node scripts/connect-firebase.mjs`를 실행한다 (키를 `keys/`로 옮기고, `.env`를 만들고, 연결을 확인한다). 폴더를 만들거나 파일 이름을 바꾸라고 하지 않는다. 다운로드 폴더에 없으면 `--file <경로>`로 지정한다. 예전에 받은 키도 같은 방법으로 넣는다.
+   연결에 성공하면 로컬에만 있던 자료와 초고를 올린다: `node --env-file=.env scripts/upload.mjs --all --commit`(미리 검사 먼저, 확인 후), 초고는 `/draft save <경로>`.
 5. **관리자 페이지 설정**: Firebase 콘솔의 웹 앱 설정(`firebaseConfig`)을 붙여 달라고 한다 (이 값은 공개돼도 되는 값이다). 받은 값과 profile.md의 `이름`을 `admin/index.html`의 `SITE_NAME`, `firebaseConfig`에 넣는다.
 6. **보는 곳**: `사이트 주소`를 profile.md에 적고, `<사이트 주소>/knowledge-admin.html`에 로그인되는지 묻는다. 페이지가 없으면 `/site`를 권한다 (이미 있는 사이트를 `/create-site`로 다시 올리지 않는다). `내 컴퓨터`면 `npx serve admin`을 대신 실행하고 `http://localhost:3000`을 열어 Google 로그인해 보게 한다.
 
