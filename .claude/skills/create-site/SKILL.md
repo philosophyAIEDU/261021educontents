@@ -57,7 +57,7 @@ Firebase 프로젝트 하나 = Hosting(사이트) + Firestore(지식 창고·결
    - `[로그인 필요]`가 나오면 3단계를 다시 안내한다.
    - `[Hosting 준비 필요]`가 나오면 콘솔 **빌드 → Hosting → 시작하기**를 눌러 달라고 한 뒤(다음 화면들은 "다음"만 눌러도 된다) 다시 올린다.
 6. **확인**: 사이트 주소를 열어 보게 하고, `/knowledge-admin.html`에서 **Google 로그인** → "지식 창고" 탭이 보이면 연결 성공이다. `<ID>.web.app` 도메인은 Firebase가 로그인을 자동으로 허용하므로 승인된 도메인을 따로 추가하지 않아도 된다.
-   - "이 계정에는 접근 권한이 없습니다" → 로그인한 계정과 `profile.md`의 `관리자 이메일`이 같은지 본다. 다르면 고치고 `node --env-file=.env scripts/deploy-site.mjs --rules-only --commit`.
+   - "이 계정에는 접근 권한이 없습니다" → 로그인한 계정과 `profile.md`의 `관리자 이메일`이 같은지 본다. 다르면 고치고 `node --env-file=.env scripts/deploy-site.mjs --rules-only --commit`. 단 콘솔의 규칙에 이 폴더에 없는 다른 컬렉션 규칙이 있으면 이 명령을 쓰지 않고 `.claude/skills/site/SKILL.md`의 "규칙 올리기"를 따른다.
 7. `profile.md`에 `사이트 주소: https://<ID>.web.app`, `관리자 페이지 보는 곳: 내 사이트`를 적는다. `reports/site-log.md`에 날짜, 주소, 올린 것(사이트·규칙)을 기록한다.
 8. **다음 단계 안내**: "이제 지식 자산화를 시작할 수 있습니다. 강의 자료를 `raw/` 폴더에 넣고 `/make`라고 해 주세요. 만들어진 결과물 중 공개하고 싶은 글(칼럼·블로그 등)은 관리자 페이지 결과물 탭에서 **사이트에 게시**를 누르면 사이트의 '글'에 나옵니다." 지식 창고 업로드에 필요한 `npm install --prefix scripts`는 내가 대신 실행한다.
 

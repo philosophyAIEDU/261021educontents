@@ -3,7 +3,8 @@ rules_version = '2';
 // 내 Firebase 프로젝트의 Firestore 규칙입니다.
 // /create-site 를 쓰면 scripts/build-site.mjs 가 YOUR_EMAIL@gmail.com 을 profile.md 의 '관리자 이메일'로 바꿔
 // site/firestore.rules 를 만들고, scripts/deploy-site.mjs 가 사이트와 함께 Firebase 에 게시합니다. (콘솔에 붙여 넣을 필요 없음)
-// 콘솔에 직접 넣는 경우: Firebase 콘솔 > Firestore Database > 규칙 에 붙여 넣고 YOUR_EMAIL@gmail.com 을 내 구글 이메일로 바꿉니다.
+// 주의: 규칙은 프로젝트에 하나뿐이어서, 이 내용을 올리면 기존 규칙 전체가 바뀝니다. 이미 있는 사이트의 프로젝트에는 그대로 올리거나 콘솔에 붙여 넣지 않습니다.
+// 기존 규칙에 필요한 칸만 합치는 방법은 .claude/skills/site/SKILL.md 의 "규칙 올리기"를 따릅니다.
 // (이 규칙은 Firebase 서버에만 있고 공개 사이트 파일에는 들어가지 않으므로 이메일이 사이트에 드러나지 않습니다)
 service cloud.firestore {
   match /databases/{database}/documents {
