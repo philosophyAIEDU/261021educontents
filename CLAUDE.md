@@ -194,7 +194,8 @@ Firestore 컬렉션: `knowledge_input`(지식 창고), `knowledge_output`(결과
 
 ## 작업 시 주의
 - `.claude/settings.json`이 `.env`와 `keys/` 읽기를 막고, 자동 실행에 필요한 스크립트 명령만 미리 허용한다. 이 설정을 약화하지 않는다.
-- 사이트 저장소(`site-repo/`)에는 관리자 페이지 파일 하나만 넣는다. 푸시는 사용자 확인 후에만 한다 (`/site`).
+- 사이트 저장소(`site-repo/`)에는 관리자 페이지 파일 하나만 넣는다 (교수님이 승인한 규칙 파일만 예외). 푸시는 사용자 확인 후에만 한다 (`/site`).
+- **이미 있는 사이트의 Firebase 프로젝트에 이 폴더의 `firestore.rules`를 그대로 올리지 않는다.** 규칙은 프로젝트에 하나뿐이어서 기존 규칙 전체가 바뀌고 가입·게시판 같은 기능이 멈출 수 있다. 현재 규칙을 먼저 확인하고 필요한 칸만 합친다 (`/site`의 "규칙 올리기").
 - `/create-site`의 공개(`deploy-site.mjs --commit`)는 교수님 확인 후에만 한다. `site/public`에는 `build-site.mjs`가 만든 파일만 있어야 하며, `deploy-site.mjs`는 다른 파일이 있으면 올리지 않는다. `site-content.md`는 공개되는 내용이므로 학생 정보·근거 없는 경력·논문을 쓰지 않는다.
 - 업로드 스크립트는 실제 업로드 전에 필수 태그 검증과 규칙 2 위반(학생 신원 정보 잔존) 검사를 먼저 수행한다. 기본은 dry-run이고 `--commit`을 붙여야 올라간다.
 - `raw/`는 git에서 제외되어 있으므로(`.gitkeep`만 추적) 원본을 커밋하지 않는다. `processed/`, `drafts/`, `reports/`의 내용도 기본적으로 git에 올리지 않는다 (`.gitignore` 참고).
